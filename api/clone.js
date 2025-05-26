@@ -2,24 +2,37 @@
 
 export default async function handler(req, res) { if (req.method !== 'POST') { return res.status(405).json({ error: 'Method Not Allowed' }); }
 
-const { bot_token, user_id, heard_from, captcha_verified } = req.body;
+try { const { bot_token, user_id, heard_from, captcha_verified } = req.body;
 
-if (!captcha_verified) { return res.status(400).json({ error: 'Please verify you are not a robot.' }); }
+if (!captcha_verified) {
+  return res.status(400).json({ error: 'Please verify you are not a robot.' });
+}
 
-if (!bot_token || !user_id || !heard_from) { return res.status(400).json({ error: 'Missing required fields.' }); }
+if (!bot_token || !user_id || !heard_from) {
+  return res.status(400).json({ error: 'Missing required fields.' });
+}
 
-const dbPath = path.resolve(process.cwd(), 'data/bots.json');
+const dbDir = path.resolve(process.cwd(), 'data');
+const dbPath = path.join(dbDir, 'bots.json');
 
-try { const fileExists = fs.existsSync(dbPath); const oldData = fileExists ? JSON.parse(fs.readFileSync(dbPath, 'utf-8')) : [];
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir);
+}
 
-const newEntry = { bot_token, user_id, heard_from, date: new Date().toISOString() };
-oldData.push(newEntry);
+const existingData = fs.existsSync(dbPath)
+  ? JSON.parse(fs.readFileSync(dbPath, 'utf8'))
+  : [];
 
-fs.writeFileSync(dbPath, JSON.stringify(oldData, null, 2));
+existingData.push({
+  bot_token,
+  user_id,
+  heard_from,
+  created_at: new Date().toISOString()
+});
 
-// Optionally trigger a backend bot setup script or async worker
+fs.writeFileSync(dbPath, JSON.stringify(existingData, null, 2));
 
-return res.status(200).json({ message: 'Cloned and stored successfully!' });
+res.status(200).json({ message: 'Bot cloned and saved successfully!' });
 
-} catch (error) { console.error('Error saving bot data:', error); return res.status(500).json({ error: 'Internal Server Error' }); } }
+} catch (err) { console.error('Clone error:', err); res.status(500).json({ error: 'Internal Server Error' }); } }
 
