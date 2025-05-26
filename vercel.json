@@ -8,6 +8,5 @@
     { "src": "/anime", "dest": "/api/anime" },
     { "src": "/clone", "dest": "/api/clone" },
     { "src": "/loop", "dest": "/api/loop" }
-  ],
-  "ignore": ["data/bots.json"]
+  ]
 }
