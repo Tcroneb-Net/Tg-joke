@@ -20,6 +20,6 @@
     {
       "src": "/meme",
       "dest": "/api/meme"
-    {
-  
+    }
+  ]
 }
