@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/joke", "destination": "/api/joke"  "source": " "destination": "/api/anime" }
+    { "source": "/joke", "destination": "/api/joke" . "/api/anime" }
   ]
 }
