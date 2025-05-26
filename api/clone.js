@@ -1,99 +1,25 @@
-import fetch from 'node-fetch';
+// /api/clone.js import fs from 'fs'; import path from 'path';
 
-const CHANNEL_ID = '@yourchannelusername'; // or the numeric channel chat id like -1001234567890
+export default async function handler(req, res) { if (req.method !== 'POST') { return res.status(405).json({ error: 'Method Not Allowed' }); }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
-  }
+const { bot_token, user_id, heard_from, captcha_verified } = req.body;
 
-  const { bot_token, user_id } = req.body;
-  if (!bot_token || !user_id) {
-    return res.status(400).json({ error: 'Missing bot_token or user_id' });
-  }
+if (!captcha_verified) { return res.status(400).json({ error: 'Please verify you are not a robot.' }); }
 
-  try {
-    // 1. Send welcome message to user
-    let resp = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: user_id,
-        text: 'Welcome! Your bot is cloned and running.',
-      }),
-    });
-    let data = await resp.json();
-    if (!data.ok) throw new Error(`Telegram user message failed: ${data.description}`);
+if (!bot_token || !user_id || !heard_from) { return res.status(400).json({ error: 'Missing required fields.' }); }
 
-    // 2. Fetch a joke
-    const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Any');
-    const jokeData = await jokeRes.json();
+const dbPath = path.resolve(process.cwd(), 'data/bots.json');
 
-    let jokeText = '';
-    if (jokeData.type === 'single') {
-      jokeText = jokeData.joke;
-    } else {
-      jokeText = `${jokeData.setup}\n${jokeData.delivery}`;
-    }
+try { const fileExists = fs.existsSync(dbPath); const oldData = fileExists ? JSON.parse(fs.readFileSync(dbPath, 'utf-8')) : [];
 
-    // 3. Send joke to user chat
-    resp = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: user_id,
-        text: `😂 Joke:\n${jokeText}`,
-      }),
-    });
-    data = await resp.json();
-    if (!data.ok) throw new Error(`Telegram user joke failed: ${data.description}`);
+const newEntry = { bot_token, user_id, heard_from, date: new Date().toISOString() };
+oldData.push(newEntry);
 
-    // 4. Send joke to channel
-    resp = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHANNEL_ID,
-        text: `😂 Joke (from cloned bot):\n${jokeText}`,
-      }),
-    });
-    data = await resp.json();
-    if (!data.ok) throw new Error(`Telegram channel joke failed: ${data.description}`);
+fs.writeFileSync(dbPath, JSON.stringify(oldData, null, 2));
 
-    // 5. Fetch anime image
-    const animeRes = await fetch('https://nekos.best/api/v2/neko');
-    const animeData = await animeRes.json();
-    const animeImageUrl = animeData.results[0].url;
+// Optionally trigger a backend bot setup script or async worker
 
-    // 6. Send anime photo to user
-    resp = await fetch(`https://api.telegram.org/bot${bot_token}/sendPhoto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: user_id,
-        photo: animeImageUrl,
-        caption: 'ANIME QUOTE by TCRONEB HACKX',
-      }),
-    });
-    data = await resp.json();
-    if (!data.ok) throw new Error(`Telegram user anime photo failed: ${data.description}`);
+return res.status(200).json({ message: 'Cloned and stored successfully!' });
 
-    // 7. Send anime photo to channel
-    resp = await fetch(`https://api.telegram.org/bot${bot_token}/sendPhoto`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHANNEL_ID,
-        photo: animeImageUrl,
-        caption: 'ANIME QUOTE by TCRONEB HACKX',
-      }),
-    });
-    data = await resp.json();
-    if (!data.ok) throw new Error(`Telegram channel anime photo failed: ${data.description}`);
+} catch (error) { console.error('Error saving bot data:', error); return res.status(500).json({ error: 'Internal Server Error' }); } }
 
-    res.status(200).json({ success: true, message: 'Messages sent to user and channel!' });
-  } catch (err) {
-    console.error('Error sending messages:', err);
-    res.status(500).json({ error: err.message });
-  }
-}
