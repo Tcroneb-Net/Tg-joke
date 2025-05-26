@@ -7,7 +7,7 @@
 </head>
 <body style="font-family: sans-serif; text-align: center; padding: 40px;">
   <h2>Clone TCRONEB HACKX Bot</h2>
-  <p>You must <a href="https://t.me/deployed_bots" target="_blank">join our channel</a> before cloning.</p>
+  <p>You must <a href="https://t.me/deployed_bots" target="_blank">join our Telegram channel</a> first.</p>
 
   <form id="cloneForm">
     <input type="text" placeholder="Your Telegram User ID" id="user_id" required><br><br>
@@ -15,18 +15,20 @@
     <button type="submit">Clone Bot</button>
   </form>
 
-  <pre id="result" style="margin-top:20px;"></pre>
+  <pre id="result" style="margin-top:20px; color: green;"></pre>
 
   <script>
     document.getElementById("cloneForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const user_id = document.getElementById("user_id").value;
       const bot_token = document.getElementById("bot_token").value;
+
       const res = await fetch("/api/clone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, bot_token })
       });
+
       const data = await res.json();
       document.getElementById("result").innerText = JSON.stringify(data, null, 2);
     });
