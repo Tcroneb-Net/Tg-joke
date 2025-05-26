@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/joke", "destination": "/api/joke" },
-    { "source": "/anime", "destination": "/api/anime" }
+    { "source": "/anime", "destination": "/api/anime" },
+    { "source": "/clone", "destination": "/api/clone" }
   ]
 }
