@@ -1,46 +1,55 @@
-const fetch = require("node-fetch");
+import fetch from 'node-fetch';
 
-module.exports = async (req, res) => {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+export default async function handler(req, res) {
+  const chatId = req.query.chat_id || '@deployed_bots'; // fallback chat
 
-  const botToken = process.env.BOT_TOKEN;
-  const chatId = process.env.CHAT_ID;
-
-  if (!botToken || !chatId) {
-    return res.status(400).json({ error: "Missing BOT_TOKEN or CHAT_ID" });
-  }
+  if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
 
   try {
-    const jokeRes = await fetch("https://api.imgflip.com/get_memes");
-    const jokeData = await jokeRes.json();
+    // Fetch first joke
+    const jokeRes1 = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+    const jokeData1 = await jokeRes1.json();
+    const joke1 = jokeData1.joke || 'Here is a joke!';
 
-    if (!jokeData || !jokeData.joke) {
-      return res.status(500).json({ error: "No joke received" });
-    }
+    // Fetch second joke to reply
+    const jokeRes2 = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+    const jokeData2 = await jokeRes2.json();
+    const joke2 = jokeData2.joke || 'Another joke for you!';
 
-    const message = `💬 *JOKE TIME*\n\n${jokeData.joke}\n\n_Made by TCRONEB HACKX_`;
-
-    const telegramRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    // Send the first joke
+    const sendMsg = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: message,
-        parse_mode: "Markdown"
+        text: `💬 *JOKE TIME*\n\n${joke1}\n\n_Made by_ \`TCRONEB HACKX\``,
+        parse_mode: 'Markdown'
       })
     });
 
-    const telegramData = await telegramRes.json();
-
-    if (!telegramData.ok) {
-      return res.status(500).json({ error: "Failed to send joke", telegramData });
+    const msgData = await sendMsg.json();
+    if (!msgData.ok) {
+      return res.status(500).json({ error: 'Failed to send first joke', details: msgData });
     }
 
-    return res.json({ success: true, joke: jokeData.joke });
+    // Send second joke as reply
+    const reply = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: joke2,
+        reply_to_message_id: msgData.result.message_id
+      })
+    });
+
+    const replyData = await reply.json();
+    if (!replyData.ok) {
+      return res.status(500).json({ error: 'Failed to reply with second joke', details: replyData });
+    }
+
+    res.status(200).json({ ok: true });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: err.message });
   }
-};
+}
