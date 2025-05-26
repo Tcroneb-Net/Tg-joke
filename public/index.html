@@ -1,131 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bot Cloner Terminal</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-
-  body {
-    background: black;
-    color: #00ff41;
-    font-family: 'Share Tech Mono', monospace;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .terminal {
-    background: #000000cc;
-    border: 2px solid #00ff41;
-    padding: 20px;
-    width: 90vw;
-    max-width: 600px;
-    min-height: 320px;
-    box-sizing: border-box;
-    border-radius: 8px;
-    box-shadow: 0 0 15px #00ff41;
-  }
-  h1 {
-    margin: 0 0 20px 0;
-    font-size: 1.8rem;
-    text-align: center;
-    text-transform: uppercase;
-  }
-  label {
-    display: block;
-    margin: 10px 0 5px 0;
-  }
-  input {
-    background: black;
-    border: 1px solid #00ff41;
-    color: #00ff41;
-    font-family: inherit;
-    font-size: 1rem;
-    padding: 8px;
-    width: 100%;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-  button {
-    margin-top: 20px;
-    background: #00ff41;
-    border: none;
-    color: black;
-    font-weight: bold;
-    font-family: inherit;
-    padding: 12px 0;
-    width: 100%;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 4px;
-  }
-  button:hover {
-    background: #00cc37;
-  }
-  #status {
-    margin-top: 20px;
-    min-height: 40px;
-    font-weight: bold;
-    white-space: pre-line;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clone Bot Terminal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    body {
+      background: black;
+      color: #00ff41;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .terminal {
+      background: #000000cc;
+      border: 2px solid #00ff41;
+      padding: 20px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 0 15px #00ff41;
+      border-radius: 10px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      background: black;
+      border: 1px solid #00ff41;
+      color: #00ff41;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+    }
+    .checkbox input {
+      margin-right: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00ff41;
+      color: black;
+      font-weight: bold;
+      margin-top: 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      white-space: pre-line;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <div class="terminal">
-    <h1>Bot Cloner Terminal</h1>
+    <h1>Clone Your Bot</h1>
     <form id="cloneForm">
       <label for="botToken">Bot Token</label>
-      <input type="text" id="botToken" name="botToken" placeholder="Enter your bot token" required />
-      
-      <label for="chatId">Chat ID</label>
-      <input type="text" id="chatId" name="chatId" placeholder="Enter your chat ID" required />
-      
-      <button type="submit">Start Clone</button>
+      <input type="text" id="botToken" required />
+
+      <label for="userId">Telegram User ID</label>
+      <input type="text" id="userId" required />
+
+      <label for="heardFrom">Where did you hear about us?</label>
+      <input type="text" id="heardFrom" placeholder="e.g. Telegram, WhatsApp, Google" required />
+
+      <div class="checkbox">
+        <input type="checkbox" id="captcha" />
+        <label for="captcha">I am not a robot</label>
+      </div>
+
+      <button type="submit">Clone Now</button>
     </form>
     <div id="status"></div>
   </div>
 
-<script>
-  const form = document.getElementById('cloneForm');
-  const status = document.getElementById('status');
+  <script>
+    const form = document.getElementById('cloneForm');
+    const status = document.getElementById('status');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    status.textContent = 'Running clone process...';
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.style.color = '#00ff41';
+      status.textContent = 'Cloning in progress...';
 
-    const botToken = form.botToken.value.trim();
-    const chatId = form.chatId.value.trim();
+      const bot_token = document.getElementById('botToken').value.trim();
+      const user_id = document.getElementById('userId').value.trim();
+      const heard_from = document.getElementById('heardFrom').value.trim();
+      const captcha_verified = document.getElementById('captcha').checked;
 
-    if (!botToken || !chatId) {
-      status.textContent = 'Please fill both fields.';
-      return;
-    }
+      if (!captcha_verified) {
+        status.style.color = '#ff0040';
+        status.textContent = 'Please verify you are not a robot.';
+        return;
+      }
 
-    try {
-      const res = await fetch('/api/clone', {
+      const response = await fetch('/api/clone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bot_token: botToken, chat_id: chatId }),
+        body: JSON.stringify({ bot_token, user_id, heard_from, captcha_verified })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
+      if (response.ok) {
         status.style.color = '#00ff41';
-        status.textContent = 'Clone successful!\n' + (data.message || '');
+        status.textContent = 'Cloned Successfully!\n' + (data.message || '');
       } else {
         status.style.color = '#ff0040';
         status.textContent = 'Clone failed:\n' + (data.error || 'Unknown error');
       }
-    } catch (err) {
-      status.style.color = '#ff0040';
-      status.textContent = 'Network error:\n' + err.message;
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
