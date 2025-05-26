@@ -14,13 +14,8 @@
       "dest": "/api/clone"
     },
     {
-      "src": "/clone",
-      "dest": "/api/clone" },
-    },
-    { 
-      "src": "/loop", 
-      "dest": "/api/loop" 
-      
-       }
+      "src": "/loop",
+      "dest": "/api/loop"
+    }
   ]
 }
