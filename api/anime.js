@@ -1,22 +1,20 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  const chatId = req.query.CHAT_ID;
+  const chatId = req.query.chat_id || '7080079152'; // fallback for your own ID
 
   if (!chatId) {
     return res.status(400).json({ error: 'chat_id is required' });
   }
 
   try {
-    // Fetch anime image
-    const imgRes = await fetch('https://nekos.best/api/v2/neko');
-    const data = await imgRes.json();
-    const imageUrl = data.results[0].url;
+    const imageRes = await fetch('https://nekos.best/api/v2/neko');
+    const imageData = await imageRes.json();
+    const imageUrl = imageData.results[0].url;
 
     const caption = `✨ *ANIME QUOTE*\n\n_Created by_ \`TCRONEB HACKX\``;
 
-    // Send photo via Telegram
-    const tgRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
+    const sendRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -27,15 +25,13 @@ export default async function handler(req, res) {
       })
     });
 
-    const tgData = await tgRes.json();
-    if (!tgData.ok) {
-      console.error('Telegram error:', tgData);
-      return res.status(500).json({ error: 'Telegram failed', details: tgData });
+    const data = await sendRes.json();
+    if (!data.ok) {
+      return res.status(500).json({ error: 'Failed to send', telegram: data });
     }
 
-    res.status(200).json({ success: true });
+    res.status(200).json({ ok: true });
   } catch (err) {
-    console.error('Error:', err);
     res.status(500).json({ error: err.message });
   }
 }
