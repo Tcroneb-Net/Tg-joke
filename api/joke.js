@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     // Fetch first joke
-    const jokeRes1 = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+    const jokeRes1 = await fetch('https://api.imgflip.com/get_memes');
     const jokeData1 = await jokeRes1.json();
     const joke1 = jokeData1.joke || 'Here is a joke!';
 
