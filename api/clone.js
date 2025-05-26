@@ -2,16 +2,17 @@ import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { bot_token, user_id } = req.body;
-  if (!bot_token || !user_id) {
-    return res.status(400).json({ error: 'Missing bot_token or user_id' });
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
   try {
-    // 1. Send cloned confirmation message
+    const { bot_token, user_id } = req.body;
+
+    if (!bot_token || !user_id) {
+      return res.status(400).json({ error: 'Missing bot_token or user_id in request body' });
+    }
+
+    // 1. Send confirmation message
     let response = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -66,9 +67,8 @@ export default async function handler(req, res) {
     data = await response.json();
     if (!data.ok) return res.status(400).json({ error: `Telegram error: ${data.description}` });
 
-    // All done!
+    // Success response
     res.status(200).json({ success: true, message: 'Cloned, joke, and anime sent successfully.' });
-
   } catch (err) {
     console.error('Error in clone handler:', err);
     res.status(500).json({ error: 'Internal server error' });
