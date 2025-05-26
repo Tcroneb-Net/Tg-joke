@@ -1,7 +1,8 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TCRONEB HACKX Clone Terminal</title>
   <style>
     body {
@@ -22,6 +23,7 @@
     }
     #terminal {
       padding: 20px;
+      max-width: 600px;
     }
     .output {
       white-space: pre-wrap;
@@ -68,7 +70,9 @@ Type `easy` to begin setup...
     </div>
     <button id="cloneBtn">Clone</button>
   </div>
-</div><script>
+</div>
+
+<script>
 // Matrix background
 const canvas = document.getElementById('matrix');
 const ctx = canvas.getContext('2d');
@@ -127,16 +131,26 @@ cloneBtn.addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bot_token: token, user_id: chat })
     });
-    const data = await res.json();
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      output.textContent += `\nError: Server returned unexpected response:\n${text}`;
+      return;
+    }
 
     if (data.success) {
       output.textContent += `\nClone Successful! Your bot is now active.`;
     } else {
       output.textContent += `\nClone Failed: ${data.error || 'Unknown error'}`;
     }
+
   } catch (e) {
     output.textContent += `\nError: ${e.message}`;
   }
 });
-</script></body>
+</script>
+</body>
 </html>
