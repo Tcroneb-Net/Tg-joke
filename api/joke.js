@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const CHANNEL_ID = '@deployed_bots'; // Replace with your channel username or numeric ID
+const CHANNEL_ID = '@your_channel_username'; // Replace this with your channel username or numeric ID
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -28,7 +28,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch a joke from JokeAPI
     const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Any');
     if (!jokeRes.ok) throw new Error('Failed to fetch joke');
     const jokeData = await jokeRes.json();
@@ -42,15 +41,15 @@ export default async function handler(req, res) {
       jokeText = 'No joke available right now.';
     }
 
-    // Send joke to user
+    // Send to user chat
     await sendTelegramMessage(user_id, `😂 Here's your joke:\n\n${jokeText}`);
 
-    // Send joke to channel
+    // Send to channel
     await sendTelegramMessage(CHANNEL_ID, `😂 Joke from bot:\n\n${jokeText}`);
 
     res.status(200).json({ success: true, message: 'Joke sent to user and channel' });
   } catch (error) {
-    console.error('Error in joke handler:', error);
+    console.error('Error sending joke:', error);
     res.status(500).json({ error: error.message });
   }
 }
