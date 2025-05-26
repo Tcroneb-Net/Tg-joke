@@ -1,156 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TCRONEB HACKX Clone Terminal</title>
-  <style>
-    body {
-      background: black;
-      color: #00ff00;
-      font-family: 'Courier New', Courier, monospace;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-    #matrix {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-    }
-    #terminal {
-      padding: 20px;
-      max-width: 600px;
-    }
-    .output {
-      white-space: pre-wrap;
-      margin-bottom: 10px;
-    }
-    input, select, button {
-      background: black;
-      color: #00ff00;
-      border: 1px solid #00ff00;
-      font-family: inherit;
-      font-size: 1em;
-      margin-top: 5px;
-      display: block;
-      margin-bottom: 10px;
-      padding: 5px;
-      width: 100%;
-    }
-    #verifyBox {
-      margin-top: 10px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bot Cloner Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  body {
+    background: black;
+    color: #00ff41;
+    font-family: 'Share Tech Mono', monospace;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .terminal {
+    background: #000000cc;
+    border: 2px solid #00ff41;
+    padding: 20px;
+    width: 90vw;
+    max-width: 600px;
+    min-height: 320px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #00ff41;
+  }
+  h1 {
+    margin: 0 0 20px 0;
+    font-size: 1.8rem;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  label {
+    display: block;
+    margin: 10px 0 5px 0;
+  }
+  input {
+    background: black;
+    border: 1px solid #00ff41;
+    color: #00ff41;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 8px;
+    width: 100%;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 20px;
+    background: #00ff41;
+    border: none;
+    color: black;
+    font-weight: bold;
+    font-family: inherit;
+    padding: 12px 0;
+    width: 100%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background: #00cc37;
+  }
+  #status {
+    margin-top: 20px;
+    min-height: 40px;
+    font-weight: bold;
+    white-space: pre-line;
+  }
+</style>
 </head>
 <body>
-<canvas id="matrix"></canvas>
-<div id="terminal">
-  <div class="output" id="output">TCRONEB HACKX Bot Cloner
-Type `easy` to begin setup...
-</div>
-  <input id="cmd" placeholder="Type a command..." />
-  <div id="form" style="display:none;">
-    <label>Bot Token:</label>
-    <input id="token" type="text">
-    <label>Chat ID:</label>
-    <input id="chat" type="text">
-    <label>Where did you hear about us?</label>
-    <select id="source">
-      <option value="telegram">Telegram</option>
-      <option value="youtube">YouTube</option>
-      <option value="friend">Friend</option>
-      <option value="other">Other</option>
-    </select>
-    <div id="verifyBox">
-      <label><input type="checkbox" id="verify"> I am not a robot</label>
-    </div>
-    <button id="cloneBtn">Clone</button>
+  <div class="terminal">
+    <h1>Bot Cloner Terminal</h1>
+    <form id="cloneForm">
+      <label for="botToken">Bot Token</label>
+      <input type="text" id="botToken" name="botToken" placeholder="Enter your bot token" required />
+      
+      <label for="chatId">Chat ID</label>
+      <input type="text" id="chatId" name="chatId" placeholder="Enter your chat ID" required />
+      
+      <button type="submit">Start Clone</button>
+    </form>
+    <div id="status"></div>
   </div>
-</div>
 
 <script>
-// Matrix background
-const canvas = document.getElementById('matrix');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const letters = Array(256).join("1").split("");
-let y = Array(letters.length).fill(0);
-function drawMatrix() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#0F0";
-  y = y.map((v, i) => {
-    const text = String.fromCharCode(3e4 + Math.random() * 33);
-    ctx.fillText(text, i * 10, v);
-    return v > 100 + Math.random() * 1e4 ? 0 : v + 10;
-  });
-}
-setInterval(drawMatrix, 50);
+  const form = document.getElementById('cloneForm');
+  const status = document.getElementById('status');
 
-const output = document.getElementById('output');
-const cmdInput = document.getElementById('cmd');
-const form = document.getElementById('form');
-const cloneBtn = document.getElementById('cloneBtn');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.textContent = 'Running clone process...';
 
-cmdInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const val = cmdInput.value.trim().toLowerCase();
-    cmdInput.value = '';
-    if (val === 'easy') {
-      output.textContent += '\n> easy\nEnter your bot details below...';
-      form.style.display = 'block';
-    } else {
-      output.textContent += `\n> ${val}\nUnknown command`;
-    }
-  }
-});
+    const botToken = form.botToken.value.trim();
+    const chatId = form.chatId.value.trim();
 
-cloneBtn.addEventListener('click', async () => {
-  const token = document.getElementById('token').value;
-  const chat = document.getElementById('chat').value;
-  const verify = document.getElementById('verify').checked;
-
-  if (!verify) {
-    output.textContent += '\nError: You must verify you are not a robot!';
-    return;
-  }
-
-  if (!token || !chat) {
-    output.textContent += '\nError: All fields are required!';
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/clone', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bot_token: token, user_id: chat })
-    });
-
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (err) {
-      output.textContent += `\nError: Server returned unexpected response:\n${text}`;
+    if (!botToken || !chatId) {
+      status.textContent = 'Please fill both fields.';
       return;
     }
 
-    if (data.success) {
-      output.textContent += `\nClone Successful! Your bot is now active.`;
-    } else {
-      output.textContent += `\nClone Failed: ${data.error || 'Unknown error'}`;
-    }
+    try {
+      const res = await fetch('/api/clone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bot_token: botToken, chat_id: chatId }),
+      });
 
-  } catch (e) {
-    output.textContent += `\nError: ${e.message}`;
-  }
-});
+      const data = await res.json();
+
+      if (res.ok) {
+        status.style.color = '#00ff41';
+        status.textContent = 'Clone successful!\n' + (data.message || '');
+      } else {
+        status.style.color = '#ff0040';
+        status.textContent = 'Clone failed:\n' + (data.error || 'Unknown error');
+      }
+    } catch (err) {
+      status.style.color = '#ff0040';
+      status.textContent = 'Network error:\n' + err.message;
+    }
+  });
 </script>
 </body>
 </html>
