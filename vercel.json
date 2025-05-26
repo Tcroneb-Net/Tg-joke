@@ -16,6 +16,10 @@
     {
       "src": "/loop",
       "dest": "/api/loop"
+    },
+    }
+      "src": "/meme",
+      "dest": "/api/meme"
     }
   ]
 }
