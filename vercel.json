@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/joke", "destination": "/api/joke" }
+  ]
+}
