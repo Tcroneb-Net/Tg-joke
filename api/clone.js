@@ -13,23 +13,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing user_id or bot_token' });
   }
 
-  const MY_BOT = process.env.MY_BOT;
-
-  // Check if user joined your channel
-  const check = await fetch(`https://api.telegram.org/bot${MY_BOT}/getChatMember?chat_id=@deployed_bots&user_id=${user_id}`);
-  const data = await check.json();
-
-  if (!data.ok || (data.result.status !== 'member' && data.result.status !== 'administrator')) {
-    return res.status(403).json({ error: 'Join @deployed_bots first' });
-  }
-
-  // Validate their bot token
+  // Validate the bot token
   const me = await fetch(`https://api.telegram.org/bot${bot_token}/getMe`).then(r => r.json());
   if (!me.ok) {
     return res.status(400).json({ error: 'Invalid bot token' });
   }
 
-  // Get anime image and joke
+  // Get anime image and quote
   const [animeRes, jokeRes] = await Promise.all([
     fetch("https://nekos.best/api/v2/neko").then(r => r.json()),
     fetch("https://v2.jokeapi.dev/joke/Any?type=single").then(r => r.json())
@@ -38,7 +28,7 @@ export default async function handler(req, res) {
   const img = animeRes.results[0].url;
   const quote = jokeRes.joke;
 
-  // Send message from their bot
+  // Send from user’s bot
   await fetch(`https://api.telegram.org/bot${bot_token}/sendPhoto`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
