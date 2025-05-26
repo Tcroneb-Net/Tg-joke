@@ -1,37 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clone Telegram Bot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bot Cloner - TCRONEB HACKX</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+    }
+    #terminal {
+      padding: 20px;
+    }
+    .output {
+      white-space: pre-wrap;
+    }
+    input {
+      background: black;
+      color: #00ff00;
+      border: none;
+      font-family: inherit;
+      font-size: 1em;
+      width: 100%;
+      outline: none;
+    }
+  </style>
 </head>
-<body style="font-family: sans-serif; text-align: center; padding: 40px;">
-  <h2>Clone TCRONEB HACKX Bot</h2>
-  <p>You must <a href="https://t.me/deployed_bots" target="_blank">join our Telegram channel</a> first.</p>
+<body>
+<canvas id="matrix"></canvas>
+<div id="terminal">
+  <div class="output">TCRONEB HACKX Bot Cloner
+Enter your command:
+</div>
+  <input id="cmd" placeholder="clone --token YOUR_TOKEN --chat YOUR_CHAT_ID" />
+</div><script>
+// Matrix background
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const letters = Array(256).join("1").split("");
+let y = Array(letters.length).fill(0);
+function drawMatrix() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#0F0";
+  y = y.map((v, i) => {
+    const text = String.fromCharCode(3e4 + Math.random() * 33);
+    ctx.fillText(text, i * 10, v);
+    return v > 100 + Math.random() * 1e4 ? 0 : v + 10;
+  });
+}
+setInterval(drawMatrix, 50);
 
-  <form id="cloneForm">
-    <input type="text" placeholder="Your Telegram User ID" id="user_id" required><br><br>
-    <input type="text" placeholder="Your Bot Token" id="bot_token" required><br><br>
-    <button type="submit">Clone Bot</button>
-  </form>
+// Terminal logic
+const input = document.getElementById('cmd');
+const output = document.querySelector('.output');
 
-  <pre id="result" style="margin-top:20px; color: green;"></pre>
+input.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const value = input.value.trim();
+    output.textContent += `\n> ${value}\n`;
+    input.value = '';
 
-  <script>
-    document.getElementById("cloneForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const user_id = document.getElementById("user_id").value;
-      const bot_token = document.getElementById("bot_token").value;
+    if (value.startsWith('clone')) {
+      const parts = value.split(' ');
+      const tokenPart = parts.find(p => p.includes('--token'));
+      const chatPart = parts.find(p => p.includes('--chat'));
 
-      const res = await fetch("/api/clone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, bot_token })
-      });
+      const token = tokenPart?.split('=')[1] || tokenPart?.split('--token ')[1];
+      const chat = chatPart?.split('=')[1] || chatPart?.split('--chat ')[1];
 
-      const data = await res.json();
-      document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-    });
-  </script>
-</body>
+      if (!token || !chat) {
+        output.textContent += `Invalid command format. Use: clone --token=BOT_TOKEN --chat=CHAT_ID\n`;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/clone', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, user_id: chat })
+        });
+        const data = await res.json();
+        output.textContent += `${JSON.stringify(data)}\n`;
+      } catch (err) {
+        output.textContent += `Error: ${err.message}\n`;
+      }
+    } else {
+      output.textContent += 'Unknown command\n';
+    }
+  }
+});
+</script></body>
 </html>
