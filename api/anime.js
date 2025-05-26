@@ -32,17 +32,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to send photo', details: photoData });
     }
 
-    // 4. Reply to the photo message with the same quote
-    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: quote,
-        reply_to_message_id: photoData.result.message_id
-      })
-    });
-
     res.status(200).json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
