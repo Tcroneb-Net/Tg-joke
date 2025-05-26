@@ -1,0 +1,99 @@
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+
+const DATA_FILE = path.resolve('./users.json');
+
+function saveUser(bot_token, user_id) {
+  let users = [];
+  try {
+    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    users = JSON.parse(raw);
+  } catch {
+    users = [];
+  }
+
+  const exists = users.some(u => u.bot_token === bot_token && u.user_id === user_id);
+  if (!exists) {
+    users.push({ bot_token, user_id });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+  }
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+  }
+
+  try {
+    const { bot_token, user_id } = req.body;
+
+    if (!bot_token || !user_id) {
+      return res.status(400).json({ error: 'Missing bot_token or user_id in request body' });
+    }
+
+    // Save the user data
+    saveUser(bot_token, user_id);
+
+    // 1. Send confirmation message
+    let response = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user_id,
+        text: '🤖 Your bot has been successfully cloned! Welcome to TCRONEB HACKX.',
+      }),
+    });
+    let data = await response.json();
+    if (!data.ok) return res.status(400).json({ error: `Telegram error: ${data.description}` });
+
+    // 2. Fetch a joke from JokeAPI
+    const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Any');
+    const jokeData = await jokeRes.json();
+
+    let jokeText = '';
+    if (jokeData.type === 'single') {
+      jokeText = jokeData.joke;
+    } else {
+      jokeText = `${jokeData.setup}\n${jokeData.delivery}`;
+    }
+
+    // Send joke message
+    response = await fetch(`https://api.telegram.org/bot${bot_token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user_id,
+        text: `😂 Joke Time!\n\n${jokeText}`,
+      }),
+    });
+    data = await response.json();
+    if (!data.ok) return res.status(400).json({ error: `Telegram error: ${data.description}` });
+
+    // 3. Fetch anime image from Nekos.best
+    const animeRes = await fetch('https://nekos.best/api/v2/neko');
+    const animeData = await animeRes.json();
+    const imageUrl = animeData.results[0].url;
+
+    const caption = `ANIME QUOTE\nBy TCRONEB HACKX`;
+
+    // Send anime photo with caption
+    response = await fetch(`https://api.telegram.org/bot${bot_token}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user_id,
+        photo: imageUrl,
+        caption: caption,
+      }),
+    });
+    data = await response.json();
+    if (!data.ok) return res.status(400).json({ error: `Telegram error: ${data.description}` });
+
+    // Success response
+    res.status(200).json({ success: true, message: 'Cloned, joke, and anime sent successfully, user saved.' });
+  } catch (err) {
+    console.error('Error in clone handler:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
