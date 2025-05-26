@@ -1,21 +1,13 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" }
+  ],
   "routes": [
-    {
-      "src": "/joke",
-      "dest": "/api/joke"
-    },
-    {
-      "src": "/anime",
-      "dest": "/api/anime"
-    },
-    {
-      "src": "/clone",
-      "dest": "/api/clone"
-    },
-    {
-      "src": "/loop",
-      "dest": "/api/loop"
-    }
-  ]
+    { "src": "/joke", "dest": "/api/joke" },
+    { "src": "/anime", "dest": "/api/anime" },
+    { "src": "/clone", "dest": "/api/clone" },
+    { "src": "/loop", "dest": "/api/loop" }
+  ],
+  "ignore": ["data/bots.json"]
 }
