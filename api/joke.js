@@ -1,55 +1,53 @@
-import fetch from 'node-fetch';
+const fetch = require("node-fetch");
 
-const CHANNEL_ID = '@your_channel_username'; // Replace this with your channel username or numeric ID
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+module.exports = async (req, res) => {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { bot_token, user_id } = req.body;
+  const botToken = process.env.BOT_TOKEN; // or hardcode it if needed
+  const chatId = process.env.CHAT_ID;     // or hardcode it
 
-  if (!bot_token || !user_id) {
-    return res.status(400).json({ error: 'bot_token and user_id are required' });
-  }
-
-  async function sendTelegramMessage(chat_id, text) {
-    const url = `https://api.telegram.org/bot${bot_token}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id, text }),
-    });
-    const data = await response.json();
-    if (!data.ok) {
-      throw new Error(`Telegram API error: ${data.description}`);
-    }
-    return data;
+  if (!botToken || !chatId) {
+    return res.status(400).json({ error: "Missing BOT_TOKEN or CHAT_ID" });
   }
 
   try {
-    const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Any');
-    if (!jokeRes.ok) throw new Error('Failed to fetch joke');
-    const jokeData = await jokeRes.json();
+    // Get meme list
+    const memeRes = await fetch("https://api.imgflip.com/get_memes");
+    const memeData = await memeRes.json();
 
-    let jokeText = '';
-    if (jokeData.type === 'single') {
-      jokeText = jokeData.joke;
-    } else if (jokeData.type === 'twopart') {
-      jokeText = `${jokeData.setup}\n${jokeData.delivery}`;
-    } else {
-      jokeText = 'No joke available right now.';
+    if (!memeData.success || !memeData.data || !memeData.data.memes.length) {
+      return res.status(500).json({ error: "Failed to fetch memes" });
     }
 
-    // Send to user chat
-    await sendTelegramMessage(user_id, `😂 Here's your joke:\n\n${jokeText}`);
+    // Pick random meme
+    const memes = memeData.data.memes;
+    const meme = memes[Math.floor(Math.random() * memes.length)];
 
-    // Send to channel
-    await sendTelegramMessage(CHANNEL_ID, `😂 Joke from bot:\n\n${jokeText}`);
+    // Send meme via Telegram
+    const sendUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
 
-    res.status(200).json({ success: true, message: 'Joke sent to user and channel' });
-  } catch (error) {
-    console.error('Error sending joke:', error);
-    res.status(500).json({ error: error.message });
+    const telegramRes = await fetch(sendUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: meme.url,
+        caption: `*${meme.name}*`,
+        parse_mode: "Markdown"
+      })
+    });
+
+    const telegramData = await telegramRes.json();
+
+    if (!telegramData.ok) {
+      return res.status(500).json({ error: "Failed to send meme to Telegram", telegramData });
+    }
+
+    return res.json({ success: true, meme: meme.name, url: meme.url });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Something went wrong" });
   }
-}
+};
