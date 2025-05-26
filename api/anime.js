@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id;
+  const chatId = req.query.CHAT_ID;
 
   if (!chatId) {
     return res.status(400).json({ error: 'chat_id is required' });
