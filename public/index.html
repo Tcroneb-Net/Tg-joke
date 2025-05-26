@@ -21,6 +21,7 @@
     }
     #terminal {
       padding: 20px;
+      color: #0aff0a;
     }
     .output {
       white-space: pre-wrap;
@@ -42,7 +43,7 @@
   <div class="output">TCRONEB HACKX Bot Cloner
 Enter your command:
 </div>
-  <input id="cmd" placeholder="clone --token YOUR_TOKEN --chat YOUR_CHAT_ID" />
+  <input id="cmd" placeholder="clone --token=YOUR_TOKEN --chat=YOUR_CHAT_ID" />
 </div><script>
 // Matrix background
 const canvas = document.getElementById('matrix');
@@ -102,5 +103,22 @@ input.addEventListener('keydown', async (e) => {
     }
   }
 });
+
+// Battery and device info
+async function reportDevice() {
+  let info = '';
+
+  if (navigator.getBattery) {
+    const battery = await navigator.getBattery();
+    info += `Battery Level: ${Math.round(battery.level * 100)}%\n`;
+  }
+
+  const ua = navigator.userAgent;
+  info += `Device Info: ${ua}\n`;
+
+  output.textContent += `\n[INFO]\n${info}`;
+}
+
+reportDevice();
 </script></body>
 </html>
