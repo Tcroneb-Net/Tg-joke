@@ -5,36 +5,29 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const botToken = process.env.BOT_TOKEN; // or hardcode it if needed
-  const chatId = process.env.CHAT_ID;     // or hardcode it
+  const botToken = process.env.BOT_TOKEN;
+  const chatId = process.env.CHAT_ID;
 
   if (!botToken || !chatId) {
     return res.status(400).json({ error: "Missing BOT_TOKEN or CHAT_ID" });
   }
 
   try {
-    // Get meme list
-    const memeRes = await fetch("https://api.imgflip.com/get_memes");
-    const memeData = await memeRes.json();
+    const jokeRes = await fetch("https://api.imgflip.com/get_memes");
+    const jokeData = await jokeRes.json();
 
-    if (!memeData.success || !memeData.data || !memeData.data.memes.length) {
-      return res.status(500).json({ error: "Failed to fetch memes" });
+    if (!jokeData || !jokeData.joke) {
+      return res.status(500).json({ error: "No joke received" });
     }
 
-    // Pick random meme
-    const memes = memeData.data.memes;
-    const meme = memes[Math.floor(Math.random() * memes.length)];
+    const message = `💬 *JOKE TIME*\n\n${jokeData.joke}\n\n_Made by TCRONEB HACKX_`;
 
-    // Send meme via Telegram
-    const sendUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-
-    const telegramRes = await fetch(sendUrl, {
+    const telegramRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        photo: meme.url,
-        caption: `*${meme.name}*`,
+        text: message,
         parse_mode: "Markdown"
       })
     });
@@ -42,12 +35,12 @@ module.exports = async (req, res) => {
     const telegramData = await telegramRes.json();
 
     if (!telegramData.ok) {
-      return res.status(500).json({ error: "Failed to send meme to Telegram", telegramData });
+      return res.status(500).json({ error: "Failed to send joke", telegramData });
     }
 
-    return res.json({ success: true, meme: meme.name, url: meme.url });
+    return res.json({ success: true, joke: jokeData.joke });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Something went wrong" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
