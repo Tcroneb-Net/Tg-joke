@@ -1,14 +1,15 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bot Cloner - TCRONEB HACKX</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCRONEB HACKX Clone Terminal</title>
   <style>
     body {
-      margin: 0;
       background: black;
       color: #00ff00;
       font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
     }
     #matrix {
@@ -21,29 +22,52 @@
     }
     #terminal {
       padding: 20px;
-      color: #0aff0a;
     }
     .output {
       white-space: pre-wrap;
+      margin-bottom: 10px;
     }
-    input {
+    input, select, button {
       background: black;
       color: #00ff00;
-      border: none;
+      border: 1px solid #00ff00;
       font-family: inherit;
       font-size: 1em;
+      margin-top: 5px;
+      display: block;
+      margin-bottom: 10px;
+      padding: 5px;
       width: 100%;
-      outline: none;
+    }
+    #verifyBox {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 <canvas id="matrix"></canvas>
 <div id="terminal">
-  <div class="output">TCRONEB HACKX Bot Cloner
-Enter your command:
+  <div class="output" id="output">TCRONEB HACKX Bot Cloner
+Type `easy` to begin setup...
 </div>
-  <input id="cmd" placeholder="clone --token=YOUR_TOKEN --chat=YOUR_CHAT_ID" />
+  <input id="cmd" placeholder="Type a command..." />
+  <div id="form" style="display:none;">
+    <label>Bot Token:</label>
+    <input id="token" type="text">
+    <label>Chat ID:</label>
+    <input id="chat" type="text">
+    <label>Where did you hear about us?</label>
+    <select id="source">
+      <option value="telegram">Telegram</option>
+      <option value="youtube">YouTube</option>
+      <option value="friend">Friend</option>
+      <option value="other">Other</option>
+    </select>
+    <div id="verifyBox">
+      <label><input type="checkbox" id="verify"> I am not a robot</label>
+    </div>
+    <button id="cloneBtn">Clone</button>
+  </div>
 </div><script>
 // Matrix background
 const canvas = document.getElementById('matrix');
@@ -64,61 +88,55 @@ function drawMatrix() {
 }
 setInterval(drawMatrix, 50);
 
-// Terminal logic
-const input = document.getElementById('cmd');
-const output = document.querySelector('.output');
+const output = document.getElementById('output');
+const cmdInput = document.getElementById('cmd');
+const form = document.getElementById('form');
+const cloneBtn = document.getElementById('cloneBtn');
 
-input.addEventListener('keydown', async (e) => {
+cmdInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
-    const value = input.value.trim();
-    output.textContent += `\n> ${value}\n`;
-    input.value = '';
-
-    if (value.startsWith('clone')) {
-      const parts = value.split(' ');
-      const tokenPart = parts.find(p => p.includes('--token'));
-      const chatPart = parts.find(p => p.includes('--chat'));
-
-      const token = tokenPart?.split('=')[1] || tokenPart?.split('--token ')[1];
-      const chat = chatPart?.split('=')[1] || chatPart?.split('--chat ')[1];
-
-      if (!token || !chat) {
-        output.textContent += `Invalid command format. Use: clone --token=BOT_TOKEN --chat=CHAT_ID\n`;
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/clone', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bot_token: token, user_id: chat })
-        });
-        const data = await res.json();
-        output.textContent += `${JSON.stringify(data)}\n`;
-      } catch (err) {
-        output.textContent += `Error: ${err.message}\n`;
-      }
+    const val = cmdInput.value.trim().toLowerCase();
+    cmdInput.value = '';
+    if (val === 'easy') {
+      output.textContent += '\n> easy\nEnter your bot details below...';
+      form.style.display = 'block';
     } else {
-      output.textContent += 'Unknown command\n';
+      output.textContent += `\n> ${val}\nUnknown command`;
     }
   }
 });
 
-// Battery and device info
-async function reportDevice() {
-  let info = '';
+cloneBtn.addEventListener('click', async () => {
+  const token = document.getElementById('token').value;
+  const chat = document.getElementById('chat').value;
+  const verify = document.getElementById('verify').checked;
 
-  if (navigator.getBattery) {
-    const battery = await navigator.getBattery();
-    info += `Battery Level: ${Math.round(battery.level * 100)}%\n`;
+  if (!verify) {
+    output.textContent += '\nError: You must verify you are not a robot!';
+    return;
   }
 
-  const ua = navigator.userAgent;
-  info += `Device Info: ${ua}\n`;
+  if (!token || !chat) {
+    output.textContent += '\nError: All fields are required!';
+    return;
+  }
 
-  output.textContent += `\n[INFO]\n${info}`;
-}
+  try {
+    const res = await fetch('/api/clone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bot_token: token, user_id: chat })
+    });
+    const data = await res.json();
 
-reportDevice();
+    if (data.success) {
+      output.textContent += `\nClone Successful! Your bot is now active.`;
+    } else {
+      output.textContent += `\nClone Failed: ${data.error || 'Unknown error'}`;
+    }
+  } catch (e) {
+    output.textContent += `\nError: ${e.message}`;
+  }
+});
 </script></body>
 </html>
