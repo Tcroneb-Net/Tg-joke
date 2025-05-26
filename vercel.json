@@ -1,7 +1,17 @@
 {
-  "rewrites": [
-    { "source": "/joke", "destination": "/api/joke" },
-    { "source": "/anime", "destination": "/api/anime" },
-    { "source": "/clone", "destination": "/api/clone" }
+  "version": 2,
+  "routes": [
+    {
+      "src": "/joke",
+      "dest": "/api/joke"
+    },
+    {
+      "src": "/anime",
+      "dest": "/api/anime"
+    },
+    {
+      "src": "/clone",
+      "dest": "/api/clone"
+    }
   ]
 }
