@@ -1,14 +1,18 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const { hostname } = req.query;
-  if (!hostname) return res.status(400).json({ error: 'Missing hostname' });
+
+  if (!hostname) {
+    return res.status(400).json({ error: 'Missing hostname parameter' });
+  }
 
   try {
-    const apiUrl = `https://networkcalc.com/api/dns/lookup/${hostname}`;
-    const response = await fetch(apiUrl);
+    const response = await fetch(`https://networkcalc.com/api/dns/lookup/${hostname}`);
     const data = await response.json();
 
     if (!data || data.error) {
