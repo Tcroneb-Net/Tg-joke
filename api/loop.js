@@ -1,41 +1,48 @@
 import fetch from 'node-fetch';
 
-const users = [
-  {
-    token: 'YOUR_BOT_TOKEN_HERE',
-    chat_id: 'YOUR_CHAT_ID_HERE'
-  }
-  // Add more user objects if needed
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID || '@deployed_bots'; // or set user ID directly
+
+const hostnames = [
+  { domain: 'econet.com', delay: 0 },
+  { domain: 'netone.com', delay: 60 * 1000 }, // after 1 minute
+  { domain: 'ecocash.com', delay: 120 * 1000 } // after 2 minutes
 ];
+
+async function fetchAndSendDNS(domain) {
+  try {
+    const dnsRes = await fetch(`https://networkcalc.com/api/dns/lookup/${domain}`);
+    const dnsData = await dnsRes.json();
+
+    const result = dnsData.records?.A?.map(a => `IP: ${a.address}`).join('\n') || "No A records found.";
+    const message = `*DNS Lookup Result for:* \`${domain}\`\n\n${result}`;
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+
+    return { success: true, domain };
+  } catch (err) {
+    return { success: false, domain, error: err.message };
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    for (const user of users) {
-      const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Any');
-      const joke = await jokeRes.json();
+  hostnames.forEach(({ domain, delay }) => {
+    setTimeout(() => {
+      fetchAndSendDNS(domain);
+    }, delay);
+  });
 
-      const message = joke.type === 'single'
-        ? joke.joke
-        : `${joke.setup}\n${joke.delivery}`;
-
-      await fetch(`https://api.telegram.org/bot${user.token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: user.chat_id,
-          text: `*Joke Time!*\n\n${message}`,
-          parse_mode: "Markdown"
-        })
-      });
-    }
-
-    res.status(200).json({ success: true, message: 'Jokes sent!' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to send jokes' });
-  }
+  res.status(200).json({ message: 'DNS lookups scheduled.' });
 }
