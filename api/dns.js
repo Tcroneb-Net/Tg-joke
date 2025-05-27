@@ -23,41 +23,34 @@ export default async function handler(req, res) {
 
     const dnsData = await dnsRes.json();
 
-    // Collect A records or fallback
+    // Extract A records
     const records = dnsData.records?.A;
     let messageText;
 
     if (records && records.length > 0) {
-      const ips = records.map((r) => r.address).join('\n');
+      const ips = records.map(r => r.address).join('\n');
       messageText = `*DNS Lookup for:* \`${hostname}\`\n\n*IP Addresses:*\n${ips}`;
     } else {
       messageText = `*DNS Lookup for:* \`${hostname}\`\n\n_No A records found._`;
     }
 
-    // Send message to Telegram
-    const sendRes = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: messageText,
-          parse_mode: 'Markdown',
-        }),
-      }
-    );
+    // Send to Telegram
+    const sendRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: messageText,
+        parse_mode: 'Markdown'
+      })
+    });
 
     const sendJson = await sendRes.json();
-
     if (!sendJson.ok)
-      return res.status(500).json({
-        error: 'Failed to send message to Telegram',
-        details: sendJson,
-      });
+      return res.status(500).json({ error: 'Failed to send message to Telegram', details: sendJson });
 
     res.status(200).json({ success: true, message: 'DNS info sent to Telegram' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }
