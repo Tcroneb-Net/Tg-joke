@@ -20,11 +20,10 @@
     {
       "src": "/meme",
       "dest": "/api/meme"
-
     },
     {
       "src": "/dns",
-      "dest": "/api/dns
+      "dest": "/api/dns"
     }
   ]
 }
