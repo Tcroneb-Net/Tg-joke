@@ -1,59 +1,22 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  const { message } = req.body;
-  const botToken = process.env.BOT_TOKEN;
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!botToken) return res.status(500).json({ error: 'Missing BOT_TOKEN' });
+  const { hostname } = req.query;
+  if (!hostname) return res.status(400).json({ error: 'Missing hostname' });
 
-  const chatId = message?.chat?.id;
-  const text = message?.text;
+  try {
+    const apiUrl = `https://networkcalc.com/api/dns/lookup/${hostname}`;
+    const response = await fetch(apiUrl);
+    const data = await response.json();
 
-  // Start command to show button
-  if (text === '/dns') {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: 'Click the button to lookup DNS for a domain.',
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'DNS Lookup', callback_data: 'lookup_dns' }]
-          ]
-        }
-      })
-    });
-    return res.status(200).json({ ok: true });
-  }
-
-  // Handle domain input like "example.com"
-  if (text?.match(/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/)) {
-    const domain = text.trim();
-
-    try {
-      const dnsRes = await fetch(`https://networkcalc.com/api/dns/lookup/${domain}`);
-      const dnsJson = await dnsRes.json();
-
-      const records = dnsJson.records;
-      const responseText = `*DNS Lookup for:* \`${domain}\`\n\n` + records.map(r => 
-        `*${r.type}* → \`${r.value}\``).join('\n');
-
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: responseText,
-          parse_mode: 'Markdown'
-        })
-      });
-
-      return res.status(200).json({ ok: true });
-    } catch (err) {
-      return res.status(500).json({ error: 'DNS fetch failed', details: err.message });
+    if (!data || data.error) {
+      return res.status(500).json({ error: 'Failed to fetch DNS info', details: data.error || data });
     }
-  }
 
-  res.status(200).json({ ok: true });
+    res.status(200).json({ ok: true, hostname, dns: data.records });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
 }
