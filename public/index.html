@@ -1,136 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Clone Bot Terminal</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-    body {
-      background: black;
-      color: #00ff41;
-      font-family: 'Share Tech Mono', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .terminal {
-      background: #000000cc;
-      border: 2px solid #00ff41;
-      padding: 20px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 0 15px #00ff41;
-      border-radius: 10px;
-    }
-    h1 {
-      text-align: center;
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-    }
-    input[type="text"],
-    select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      background: black;
-      border: 1px solid #00ff41;
-      color: #00ff41;
-      border-radius: 4px;
-      font-family: inherit;
-    }
-    .checkbox {
-      display: flex;
-      align-items: center;
-      margin-top: 15px;
-    }
-    .checkbox input {
-      margin-right: 10px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #00ff41;
-      color: black;
-      font-weight: bold;
-      margin-top: 20px;
-      border: none;
-      border-radius: 5px;
-      font-size: 1.1rem;
-      cursor: pointer;
-    }
-    #status {
-      margin-top: 20px;
-      white-space: pre-line;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TCRONEB HACKX - Bot Clone Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  /* Matrix Background */
+  body, html {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: black;
+    color: #0F0;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* Terminal Container */
+  #terminal {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 50px auto;
+    background: rgba(0,0,0,0.85);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px #0F0;
+  }
+
+  #output {
+    height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  #input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  #prompt {
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+
+  #cmdline {
+    flex-grow: 1;
+    background: black;
+    border: none;
+    outline: none;
+    color: #0F0;
+    font-family: inherit;
+    font-size: 16px;
+  }
+
+  #header {
+    text-align: center;
+    margin-bottom: 15px;
+    user-select: none;
+  }
+
+  #header img {
+    border-radius: 50%;
+    width: 80px;
+    cursor: pointer;
+  }
+
+  #header h1 {
+    margin: 10px 0 0;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+  }
+
+  a {
+    color: #0F0;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Scrollbar for output */
+  #output::-webkit-scrollbar {
+    width: 8px;
+  }
+  #output::-webkit-scrollbar-thumb {
+    background: #0F0;
+    border-radius: 4px;
+  }
+</style>
 </head>
 <body>
-  <div class="terminal">
-    <h1>Clone Your Bot</h1>
-    <form id="cloneForm">
-      <label for="botToken">Bot Token</label>
-      <input type="text" id="botToken" required />
 
-      <label for="userId">Telegram User ID</label>
-      <input type="text" id="userId" required />
+<canvas id="matrix"></canvas>
 
-      <label for="heardFrom">Where did you hear about us?</label>
-      <input type="text" id="heardFrom" placeholder="e.g. Telegram, WhatsApp, Google" required />
-
-      <div class="checkbox">
-        <input type="checkbox" id="captcha" />
-        <label for="captcha">I am not a robot</label>
-      </div>
-
-      <button type="submit">Clone Now</button>
-    </form>
-    <div id="status"></div>
+<div id="terminal" role="main" aria-label="Terminal emulator">
+  <div id="header">
+    <a href="https://t.me/paidtechzone" target="_blank" rel="noopener">
+      <img src="https://i.ibb.co/gZHrS8D7/eb5e43176104.jpg" alt="TCRONEB HACKX Profile" />
+    </a>
+    <h1>TCRONEB HACKX</h1>
   </div>
 
-  <script>
-    const form = document.getElementById('cloneForm');
-    const status = document.getElementById('status');
+  <div id="output" aria-live="polite" aria-atomic="false"></div>
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      status.style.color = '#00ff41';
-      status.textContent = 'Cloning in progress...';
+  <div id="input-line">
+    <div id="prompt">></div>
+    <input type="text" id="cmdline" autocomplete="off" aria-label="Terminal command input" autofocus />
+  </div>
+</div>
 
-      const bot_token = document.getElementById('botToken').value.trim();
-      const user_id = document.getElementById('userId').value.trim();
-      const heard_from = document.getElementById('heardFrom').value.trim();
-      const captcha_verified = document.getElementById('captcha').checked;
+<script>
+// Matrix background effect
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+let width, height;
+const letters = 'アァイィウヴエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヰヱヲンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+let fontSize = 16;
+let columns;
+let drops;
 
-      if (!captcha_verified) {
-        status.style.color = '#ff0040';
-        status.textContent = 'Please verify you are not a robot.';
-        return;
-      }
+function setup() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+  columns = Math.floor(width / fontSize);
+  drops = new Array(columns).fill(1);
+}
 
-      const response = await fetch('/api/clone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bot_token, user_id, heard_from, captcha_verified })
-      });
+function draw() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#0F0';
+  ctx.font = fontSize + 'px Share Tech Mono';
 
-      const data = await response.json();
+  for (let i = 0; i < drops.length; i++) {
+    const text = letters[Math.floor(Math.random() * letters.length)];
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-      if (response.ok) {
-        status.style.color = '#00ff41';
-        status.textContent = 'Cloned Successfully!\n' + (data.message || '');
-      } else {
-        status.style.color = '#ff0040';
-        status.textContent = 'Clone failed:\n' + (data.error || 'Unknown error');
-      }
+    if (drops[i] * fontSize > height && Math.random() > 0.975) {
+      drops[i] = 0;
+    }
+    drops[i]++;
+  }
+}
+
+window.addEventListener('resize', () => {
+  setup();
+});
+setup();
+setInterval(draw, 50);
+
+// Terminal logic
+const output = document.getElementById('output');
+const cmdline = document.getElementById('cmdline');
+
+let botToken = '';
+let chatId = '';
+let userSource = '';
+
+function print(text = '', newline = true) {
+  output.innerHTML += text + (newline ? '\n' : '');
+  output.scrollTop = output.scrollHeight;
+}
+
+function showHelp() {
+  print("Available commands:");
+  print("  easy            - Start cloning process");
+  print("  set token       - Set your bot token");
+  print("  set chatid      - Set your chat ID");
+  print("  set source      - Set where you heard us");
+  print("  clone           - Clone bot with saved details");
+  print("  clear           - Clear terminal");
+  print("  help            - Show this help");
+  print("");
+}
+
+function clearTerminal() {
+  output.innerHTML = '';
+}
+
+async function cloneBot() {
+  if (!botToken) {
+    print("Error: Bot token not set. Use 'set token' command.");
+    return;
+  }
+  if (!chatId) {
+    print("Error: Chat ID not set. Use 'set chatid' command.");
+    return;
+  }
+  if (!userSource) {
+    print("Error: Source not set. Use 'set source' command.");
+    return;
+  }
+
+  print("Cloning in progress...");
+  
+  try {
+    const res = await fetch('/api/clone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bot_token: botToken,
+        chat_id: chatId,
+        source: userSource
+      })
     });
-  </script>
+    const data = await res.json();
+    if (data.ok) {
+      print("Clone successful! Your bot is now running.");
+    } else {
+      print("Clone failed: " + (data.error || JSON.stringify(data)));
+    }
+  } catch (err) {
+    print("Clone failed: " + err.message);
+  }
+}
+
+cmdline.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const input = cmdline.value.trim();
+    print('> ' + input);
+    cmdline.value = '';
+
+    const args = input.split(' ');
+    const cmd = args[0].toLowerCase();
+
+    switch (cmd) {
+      case 'easy':
+        print("Welcome! Let's clone your bot.");
+        print("Please enter your bot token:");
+        botToken = '';
+        chatId = '';
+        userSource = '';
+        break;
+
+      case 'set':
+        if (args[1] === 'token') {
+          if (args.length >= 3) {
+            botToken = args.slice(2).join(' ');
+            print("Bot token set.");
+          } else {
+            print("Usage: set token <your_bot_token>");
+          }
+        } else if (args[1] === 'chatid') {
+          if (args.length >= 3) {
+            chatId = args.slice(2).join(' ');
+            print("Chat ID set.");
+          } else {
+            print("Usage: set chatid <your_chat_id>");
+          }
+        } else if (args[1] === 'source') {
+          if (args.length >= 3) {
+            userSource = args.slice(2).join(' ');
+            print("Source set.");
+          } else {
+            print("Usage: set source <where_you_heard_us>");
+          }
+        } else {
+          print("Unknown set command. Use: token, chatid, source");
+        }
+        break;
+
+      case 'clone':
+        cloneBot();
+        break;
+
+      case 'clear':
+        clearTerminal();
+        break;
+
+      case 'help':
+        showHelp();
+        break;
+
+      default:
+        print("Unknown command. Type 'help' for commands.");
+    }
+  }
+});
+
+print("TCRONEB HACKX Bot Clone Terminal");
+print("Type 'help' for commands.");
+</script>
+
 </body>
 </html>
