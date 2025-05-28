@@ -10,5 +10,6 @@
     { "src": "/loop", "dest": "/api/loop" },
     { "src": "/meme", "dest": "/api/meme" },
     { "src": "/dns", "dest": "/api/dns" }
+    { "src": "/gpt", "dest": "/api/gpt" }
   ]
 }
