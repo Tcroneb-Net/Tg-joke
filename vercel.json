@@ -11,5 +11,7 @@
     { "src": "/meme", "dest": "/api/meme" },
     { "src": "/dns", "dest": "/api/dns" },
     { "src": "/gpt", "dest": "/api/gpt" }
-  ]
+  ],
+  "cleanUrls": true,
+  "rewrites": []
 }
