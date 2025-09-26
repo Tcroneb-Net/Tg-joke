@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || '@deployed_bots'; // fallback chat
+  const chatId = req.query.chat_id || '@tbadibwoytech'; // fallback chat
 
   if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
 
