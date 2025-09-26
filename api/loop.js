@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CHAT_ID = process.env.CHAT_ID || '@deployed_bots'; // or set user ID directly
+const CHAT_ID = process.env.CHAT_ID || '@tbadibwoytech'; // or set user ID directly
 
 const hostnames = [
   { domain: 'econet.com', delay: 0 },
