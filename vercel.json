@@ -6,12 +6,6 @@
   "routes": [
     { "src": "/joke", "dest": "/api/joke" },
     { "src": "/anime", "dest": "/api/anime" },
-    { "src": "/clone", "dest": "/api/clone" },
-    { "src": "/loop", "dest": "/api/loop" },
-    { "src": "/meme", "dest": "/api/meme" },
-    { "src": "/dns", "dest": "/api/dns" },
-    { "src": "/gpt", "dest": "/api/gpt" }
-  ],
-  "cleanUrls": true,
-  "rewrites": []
+    { "src": "/clone", "dest": "/api/clone" }
+  ]
 }
