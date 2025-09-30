@@ -14,27 +14,31 @@ export default async function handler(req, res) {
 
     // Fetch anime image
     const imgRes = await fetch('https://nekos.best/api/v2/neko');
-    if (!imgRes.ok) throw new Error('Failed to fetch anime image');
     const imgData = await imgRes.json();
     const imageUrl = imgData.results?.[0]?.url || '';
 
     // Fetch two jokes
     const fetchJoke = async () => {
-      const res = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
-      if (!res.ok) return "Couldn't fetch joke!";
-      const data = await res.json();
-      return data.joke || "Here's a funny joke!";
+      try {
+        const res = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
+        if (!res.ok) return "Couldn't fetch joke!";
+        const data = await res.json();
+        if (!data || !data[0]) return "Here's a funny joke!";
+        return `${data[0].setup} - ${data[0].punchline}`;
+      } catch {
+        return "Here's a funny joke!";
+      }
     };
 
     const [joke1, joke2] = await Promise.all([fetchJoke(), fetchJoke()]);
 
-    // Send photo with caption (pro message)
+    // Caption with Markdown
     const caption = `
 ${greeting}! 👋
 
 🎉 Check out my website monitor bot: [WebMonitor Pro](https://monitor-plus.vercel.app)
 
-💡 Just testing the bot, and it can do a lot automatically:
+💡 Just testing the bot, it can do a lot automatically:
 - Send jokes & anime pics
 - Track websites & bots
 - Display stats and updates
@@ -46,6 +50,7 @@ Here's a joke for you:
 _Created by_ \`TCRONEB HACKX & Team World of Technology\`
 `;
 
+    // Send photo
     const sendPhotoRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -56,12 +61,11 @@ _Created by_ \`TCRONEB HACKX & Team World of Technology\`
         parse_mode: 'Markdown'
       })
     });
-
     const photoData = await sendPhotoRes.json();
     if (!photoData.ok) throw new Error('Failed to send photo');
 
-    // Auto-reply with second joke
-    const replyRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+    // Reply with second joke
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -71,11 +75,8 @@ _Created by_ \`TCRONEB HACKX & Team World of Technology\`
       })
     });
 
-    const replyData = await replyRes.json();
-    if (!replyData.ok) throw new Error('Failed to send reply');
-
     // Create poll for joke feedback
-    const pollRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPoll`, {
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPoll`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -88,8 +89,18 @@ _Created by_ \`TCRONEB HACKX & Team World of Technology\`
       })
     });
 
-    const pollData = await pollRes.json();
-    if (!pollData.ok) throw new Error('Failed to create poll');
+    // Optional: Add inline button to Telegram channel
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: "🌐 Join our Telegram channel for updates and tips!",
+        reply_markup: {
+          inline_keyboard: [[{ text: "🚀 Join Channel", url: "https://t.me/worldoftech4" }]]
+        }
+      })
+    });
 
     res.status(200).json({ ok: true, image: imageUrl, jokes: [joke1, joke2] });
 
