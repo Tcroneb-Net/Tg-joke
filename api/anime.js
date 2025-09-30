@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
     // Fetch two jokes
     const fetchJoke = async () => {
-      const res = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+      const res = await fetch('https://official-joke-api.appspot.com/jokes/random');
       if (!res.ok) return "Couldn't fetch joke!";
       const data = await res.json();
       return data.joke || "Here's a funny joke!";
