@@ -17,7 +17,7 @@ const CATEGORIES = [
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || "@tbadibwoytech";
+  const chatId = req.query.chat_id || "@webmonitorpro";
   if (!chatId) return res.status(400).json({ error: "chat_id is required" });
 
   try {
