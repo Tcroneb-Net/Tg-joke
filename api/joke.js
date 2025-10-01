@@ -1,66 +1,68 @@
-import fetch from "node-fetch";
+import fetch from 'node-fetch';
+
+// Worker endpoints
+const API_SEARCH = "https://ab-yts.abrahamdw882.workers.dev?query=";
+const API_FORMATS = "https://ab-ytdlprov2.abrahamdw882.workers.dev/?url=";
+
+// Telegram Bot
+const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
 
 export default async function handler(req, res) {
   const chatId = req.query.chat_id || "@tbadibwoytech";
   if (!chatId) return res.status(400).json({ error: "chat_id is required" });
 
   try {
-    // Fetch trending movies from YTS
-    const ytsRes = await fetch("https://yts.mx/api/v2/list_movies.json?limit=20&sort_by=year");
-    const ytsData = await ytsRes.json();
-    let movies = ytsData.data.movies || [];
+    // 1️⃣ Fetch top action trailers
+    const searchRes = await fetch(API_SEARCH + encodeURIComponent("action movie trailer"), { referrerPolicy: "no-referrer" });
+    const videos = await searchRes.json();
+    if (!videos || videos.length === 0) return res.status(404).json({ error: "No trailers found" });
 
-    // Filter only movies that have a trailer
-    movies = movies.filter(m => m.yt_trailer_code);
-    if (!movies.length) throw new Error("No movies with trailers available");
+    // Keep track of sent trailers (to avoid duplicates)
+    const sentTrailers = [];
 
-    // Pick a random movie
-    const movie = movies[Math.floor(Math.random() * movies.length)];
-    const ytUrl = `https://www.youtube.com/watch?v=${movie.yt_trailer_code}`;
+    for (const v of videos.slice(0, 5)) {
+      // 2️⃣ Get MP4 URL
+      const formatRes = await fetch(API_FORMATS + encodeURIComponent(v.url), { referrerPolicy: "no-referrer" });
+      const formats = await formatRes.json();
+      if (!formats?.video?.length) continue;
 
-    // Use a YouTube download API to get direct MP4 link
-    const apiRes = await fetch(`https://api.youtubedownloadapi.com/get?url=${ytUrl}&format=mp4`);
-    const apiData = await apiRes.json();
-    if (!apiData?.url) throw new Error("Could not fetch direct video URL");
+      const mp4Url = formats.video[0].download;
+      if (!mp4Url || sentTrailers.includes(v.title)) continue;
 
-    const videoUrl = apiData.url;
+      // 3️⃣ Send video to Telegram
+      const now = new Date();
+      const caption = `🎬 *${v.title}*  
+🕒 ${now.toLocaleString()}  
+Enjoy this action trailer!`;
 
-    // Send video to Telegram
-    const caption = `🎬 *${movie.title}* (${movie.year})\n⭐ Rating: ${movie.rating}/10\n💡 Enjoy the trailer!`;
-    const tgRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        video: videoUrl,
-        caption,
-        parse_mode: "Markdown",
-        supports_streaming: true
-      })
-    });
+      await fetch(`${TELEGRAM_API}/sendVideo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          video: mp4Url,
+          caption: caption,
+          parse_mode: "Markdown",
+          supports_streaming: true
+        })
+      });
 
-    const tgData = await tgRes.json();
-    if (!tgData.ok) throw new Error("Failed to send video to Telegram");
+      // 4️⃣ Send poll for feedback
+      await fetch(`${TELEGRAM_API}/sendPoll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          question: "How do you rate this trailer?",
+          options: JSON.stringify(["🔥 Amazing", "😐 Okay", "🙁 Not good"]),
+          is_anonymous: false
+        })
+      });
 
-    // Optional: Create poll
-    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPoll`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        question: "Did you like this trailer?",
-        options: JSON.stringify(["😍 Loved it", "😐 It's okay", "🙁 Not my type"]),
-        is_anonymous: false,
-        reply_to_message_id: tgData.result.message_id
-      })
-    });
+      sentTrailers.push(v.title);
+    }
 
-    res.status(200).json({
-      ok: true,
-      movie: movie.title,
-      trailer: videoUrl
-    });
-
+    res.status(200).json({ ok: true, sent: sentTrailers.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
