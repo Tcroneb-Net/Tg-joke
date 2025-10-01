@@ -1,67 +1,55 @@
 import fetch from "node-fetch";
+import { exec } from "child_process";
+import util from "util";
+const execPromise = util.promisify(exec);
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || "@tbadibwoytech"; // replace with your channel/group/bot
+  const chatId = req.query.chat_id || "@tbadibwoytech";
   if (!chatId) return res.status(400).json({ error: "chat_id is required" });
 
   try {
-    // 1. Fetch trending movies from YTS
+    // 1. Get trending movies
     const ytsRes = await fetch("https://yts.mx/api/v2/list_movies.json?limit=20&sort_by=year");
     const ytsData = await ytsRes.json();
     const movies = ytsData.data.movies || [];
     if (!movies.length) throw new Error("No movies found");
 
-    // 2. Pick a random movie
+    // 2. Pick random movie
     const movie = movies[Math.floor(Math.random() * movies.length)];
-    const youtubeUrl = movie.yt_trailer_code
-      ? `https://www.youtube.com/watch?v=${movie.yt_trailer_code}`
-      : null;
+    if (!movie.yt_trailer_code) throw new Error("No trailer available");
 
-    // 3. Caption
-    const caption = `
-🎬 *${movie.title}* (${movie.year})
-⭐ ${movie.rating}/10
-📀 Genre: ${movie.genres?.join(", ") || "Unknown"}
+    const ytUrl = `https://www.youtube.com/watch?v=${movie.yt_trailer_code}`;
 
-🎥 Trailer: ${youtubeUrl || "Not available"}
+    // 3. Download trailer as mp4 (first available 480p)
+    const { stdout } = await execPromise(
+      `yt-dlp -f 'best[ext=mp4][height<=480]' -g ${ytUrl}`
+    );
+    const directVideoUrl = stdout.trim();
 
-_Powered by YTS & MonitorPro Bot_
-`;
-
-    // 4. Inline voting buttons
-    const keyboard = {
-      inline_keyboard: [
-        [
-          { text: "👍 Awesome", callback_data: "vote_up" },
-          { text: "😐 Meh", callback_data: "vote_neutral" },
-          { text: "👎 Bad", callback_data: "vote_down" }
-        ]
-      ]
-    };
-
-    // 5. Send movie poster with buttons
-    const sendPhotoRes = await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
+    // 4. Send video to Telegram
+    const caption = `🎬 *${movie.title}* (${movie.year})\n⭐ ${movie.rating}/10`;
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          photo: movie.medium_cover_image,
+          video: directVideoUrl,
           caption,
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          supports_streaming: true
         })
       }
     );
 
-    const photoData = await sendPhotoRes.json();
-    if (!photoData.ok) throw new Error("Failed to send movie");
+    const tgData = await tgRes.json();
+    if (!tgData.ok) throw new Error("Telegram video send failed");
 
     res.status(200).json({
       ok: true,
       movie: movie.title,
-      trailer: youtubeUrl || "N/A"
+      trailer: directVideoUrl
     });
   } catch (err) {
     console.error(err);
