@@ -1,26 +1,26 @@
-import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import mongoose from 'mongoose';
-import { Vote } from './models/vote.js';
+import { Vote } from '../models/vote.js';
 
 const TOKEN = process.env.BOT_TOKEN;
 const MONGO_URI = process.env.MONGO_URI;
 
-await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-console.log('✅ MongoDB connected');
+// Connect MongoDB
+let conn = null;
+async function connectDB() {
+  if (conn) return conn;
+  conn = await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+  return conn;
+}
 
-const bot = new TelegramBot(TOKEN, { polling: true });
-
-// --- Categories ---
-let categories = [
+// Categories
+const categories = [
   'Anime 4K', 'Action Actors', 'Cute Girl', 'Fantasy Art', 'Digital Art',
   'Code', 'Manga Art', 'Trader', 'Fight', 'Race Car', 'Galaxy', 'Space',
   'Motivation', 'Luxury', 'Sports', 'Cars', 'Technology', 'Gaming'
 ];
 
-const activeChats = new Set();
-
-// --- Fetch random image ---
+// Fetch random image
 async function getRandomImage() {
   const category = categories[Math.floor(Math.random() * categories.length)];
   const apiUrl = `https://ab-pinetrest.abrahamdw882.workers.dev/?query=${encodeURIComponent(category)}`;
@@ -37,7 +37,7 @@ async function getRandomImage() {
   }
 }
 
-// --- Fetch joke ---
+// Fetch joke
 async function getJoke() {
   try {
     const res = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
@@ -48,99 +48,65 @@ async function getJoke() {
   }
 }
 
-// --- Send image + inline voting + save vote in MongoDB ---
-async function sendRandomContent(chatId) {
+export default async function handler(req, res) {
+  await connectDB();
+  const chatId = req.query.chat_id || process.env.DEFAULT_CHAT_ID;
+  if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
+
   const { image, category } = await getRandomImage();
-  if (!image) return;
+  if (!image) return res.status(200).json({ ok: false, message: 'No image found' });
 
   const joke = await getJoke();
-  const caption = `🎯 Category: *${category}*\n\n💡 Joke: "${joke}"\n\nVote below!`;
+  const caption = `🎯 Category: *${category}*\n\n💡 Joke: "${joke}"`;
 
   try {
-    const photo = await bot.sendPhoto(chatId, image, {
-      caption,
-      parse_mode: 'Markdown',
-      disable_notification: true
+    // Send photo
+    const photoRes = await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: image,
+        caption,
+        parse_mode: 'Markdown',
+        disable_notification: true
+      })
     });
+    const photoData = await photoRes.json();
+    if (!photoData.ok) return res.status(500).json({ ok: false, message: 'Failed to send photo' });
 
+    // Send inline vote buttons
     const inlineKeyboard = {
       inline_keyboard: [
         [
-          { text: "😍 Love it", callback_data: `vote|${photo.message_id}|Love` },
-          { text: "😐 Meh", callback_data: `vote|${photo.message_id}|Meh` },
-          { text: "🙁 Not for me", callback_data: `vote|${photo.message_id}|Not` }
+          { text: "😍 Love it", callback_data: `vote|${photoData.result.message_id}|Love` },
+          { text: "😐 Meh", callback_data: `vote|${photoData.result.message_id}|Meh` },
+          { text: "🙁 Not for me", callback_data: `vote|${photoData.result.message_id}|Not` }
         ]
       ]
     };
-
-    await bot.sendMessage(chatId, "Cast your vote:", {
-      reply_markup: inlineKeyboard,
-      disable_notification: true
+    await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: "Cast your vote:",
+        reply_markup: inlineKeyboard,
+        disable_notification: true
+      })
     });
 
-    // Save to DB
+    // Save to MongoDB
     await Vote.create({
-      messageId: photo.message_id,
+      messageId: photoData.result.message_id,
       chatId,
       image,
       category
     });
+
+    res.status(200).json({ ok: true, image, category });
   } catch (err) {
-    console.error('Failed to send content:', err);
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 }
-
-// --- Handle votes ---
-bot.on('callback_query', async (query) => {
-  const [action, messageId, vote] = query.data.split('|');
-  if (action === 'vote') {
-    const voteRecord = await Vote.findOne({ messageId });
-    if (voteRecord) {
-      voteRecord.votes[vote] += 1;
-      await voteRecord.save();
-      bot.answerCallbackQuery(query.id, { text: `You voted: ${vote}` });
-    }
-  }
-});
-
-// --- Track when bot is added to chat ---
-bot.on('my_chat_member', async (update) => {
-  const chat = update.chat;
-  const status = update.new_chat_member?.status;
-  if (status === 'member' || status === 'administrator') {
-    activeChats.add(chat.id);
-    sendRandomContent(chat.id);
-  }
-});
-
-// --- Manual commands ---
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "🤖 Pro Ultra Bot Active! I post premium images + jokes every 1 minute with inline voting and stats.");
-});
-
-// --- Auto-post every 1 min ---
-setInterval(() => {
-  activeChats.forEach(chatId => sendRandomContent(chatId));
-}, 60 * 1000);
-
-// --- Weekly summary (example) ---
-async function sendWeeklySummary(adminChatId) {
-  const votes = await Vote.find({ timestamp: { $gte: new Date(Date.now() - 7*24*60*60*1000) } });
-  const stats = {};
-
-  votes.forEach(v => {
-    if (!stats[v.category]) stats[v.category] = { Love: 0, Meh: 0, Not: 0 };
-    stats[v.category].Love += v.votes.Love;
-    stats[v.category].Meh += v.votes.Meh;
-    stats[v.category].Not += v.votes.Not;
-  });
-
-  let summary = "📊 Weekly Stats:\n\n";
-  for (const cat in stats) {
-    summary += `*${cat}*: 😍 ${stats[cat].Love} | 😐 ${stats[cat].Meh} | 🙁 ${stats[cat].Not}\n`;
-  }
-
-  bot.sendMessage(adminChatId, summary, { parse_mode: 'Markdown' });
-}
-
-console.log("🤖 Pro Ultra Telegram Bot running...");
