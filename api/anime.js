@@ -1,132 +1,94 @@
-import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 
-const TOKEN = process.env.BOT_TOKEN;
-if (!TOKEN) throw new Error("BOT_TOKEN not set in env variables");
+// ✅ Main handler for auto-posting Telegram messages
+export default async function handler(req, res) {
+  const chatId = req.query.chat_id || '@your_channel_or_group';
+  if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
 
-const bot = new TelegramBot(TOKEN, { polling: true });
-
-// --- Premium categories ---
-const categories = [
-  'Anime 4K', 'Action Actors', 'Cute Girl', 'Fantasy Art', 'Digital Art',
+  try {
+    // --- Categories for random content ---
+    const categories = [
+       'Anime 4K', 'Action Actors', 'Cute Girl', 'Fantasy Art', 'Digital Art',
   'Kawaii', 'Manga Art', 'Trader', 'Fight', 'Race Car', 'Galaxy', 'Space',
   'Motivation', 'Luxury', 'Sports', 'Cars', 'Technology', 'Gaming'
 ];
 
-// --- Active chats and vote tracking ---
-const activeChats = new Set();
-const voteStats = {}; // { message_id: { image: url, votes: { Love:0, Meh:0, Not:0 } } }
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
-// --- Fetch random image ---
-async function getRandomImage() {
-  const category = categories[Math.floor(Math.random() * categories.length)];
-  const apiUrl = `https://ab-pinetrest.abrahamdw882.workers.dev/?query=${encodeURIComponent(category)}`;
-  try {
-    const res = await fetch(apiUrl);
-    const data = await res.json();
+    // --- Fetch random image from Pinterest API ---
+    const imgRes = await fetch(`https://ab-pinetrest.abrahamdw882.workers.dev/?query=${encodeURIComponent(randomCategory)}`);
+    const data = await imgRes.json();
     const pins = data.data || [];
-    if (!pins.length) return { image: null, category };
+    if (!pins.length) throw new Error('No images found');
     const randomPin = pins[Math.floor(Math.random() * pins.length)];
-    return { image: randomPin.image, category };
-  } catch (err) {
-    console.error("Image fetch error:", err);
-    return { image: null, category };
-  }
-}
+    const imageUrl = randomPin.image;
 
-// --- Fetch a joke ---
-async function getJoke() {
-  try {
-    const res = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
-    const data = await res.json();
-    return data?.[0] ? `${data[0].setup} - ${data[0].punchline}` : "Here's a joke!";
-  } catch (err) {
-    console.error("Joke fetch error:", err);
-    return "Here's a joke!";
-  }
-}
+    // --- Fetch a quick joke ---
+    const jokeRes = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
+    const jokeData = await jokeRes.json();
+    const joke = jokeData?.[0] ? `${jokeData[0].setup} - ${jokeData[0].punchline}` : "Here's a joke for you!";
 
-// --- Send image with inline voting ---
-async function sendRandomContent(chatId) {
-  try {
-    const { image, category } = await getRandomImage();
-    if (!image) return;
+    // --- Caption ---
+    const caption = `
+🎯 Category: *${randomCategory}*
 
-    const joke = await getJoke();
-    // Escape Markdown special chars
-    const safeJoke = joke.replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
-    const safeCategory = category.replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
+💡 Joke: "${joke}"
 
-    const caption = `🎯 Category: *${safeCategory}*\n\n💡 Joke: "${safeJoke}"\n\nVote below if you like this!`;
+_Vote below if you like this!_
+`;
 
-    const photo = await bot.sendPhoto(chatId, image, {
-      caption,
-      parse_mode: 'MarkdownV2',
-      disable_notification: true
+    // --- Send image silently (disable notifications) ---
+    const sendPhotoRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: imageUrl,
+        caption: caption,
+        parse_mode: 'Markdown',
+        disable_notification: true // quiet delivery
+      })
+    });
+    const photoData = await sendPhotoRes.json();
+    if (!photoData.ok) throw new Error('Failed to send photo');
+
+    // --- Poll for voting ---
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPoll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        question: "Do you like this image?",
+        options: JSON.stringify(["😍 Love it", "😐 It's okay", "🙁 Not for me"]),
+        is_anonymous: false,
+        type: "regular",
+        allows_multiple_answers: false,
+        reply_to_message_id: photoData.result.message_id,
+        disable_notification: true
+      })
     });
 
-    const inlineKeyboard = {
-      inline_keyboard: [
-        [
-          { text: "😍 Love it", callback_data: `vote|${photo.message_id}|Love` },
-          { text: "😐 Meh", callback_data: `vote|${photo.message_id}|Meh` },
-          { text: "🙁 Not for me", callback_data: `vote|${photo.message_id}|Not` }
-        ]
-      ]
-    };
-
-    await bot.sendMessage(chatId, "Cast your vote:", {
-      reply_markup: inlineKeyboard,
-      disable_notification: true
+    // --- Optional: inline buttons for engagement ---
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: "🌐 Join our Telegram channel for more updates!",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🚀 Join Channel", url: "https://t.me/worldoftech4" }],
+            [{ text: "💻 Visit Website", url: "https://monitor-plus.vercel.app" }]
+          ]
+        },
+        disable_notification: true
+      })
     });
 
-    voteStats[photo.message_id] = { image, category, votes: { Love: 0, Meh: 0, Not: 0 } };
+    res.status(200).json({ ok: true, category: randomCategory, image: imageUrl, joke });
+
   } catch (err) {
-    console.error("Failed to send content:", err);
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 }
-
-// --- Handle vote clicks ---
-bot.on('callback_query', (query) => {
-  try {
-    const [action, msgId, vote] = query.data.split('|');
-    if (action === 'vote' && voteStats[msgId]) {
-      voteStats[msgId].votes[vote] += 1;
-      bot.answerCallbackQuery(query.id, { text: `You voted: ${vote}` });
-    }
-  } catch (err) {
-    console.error("Vote handling error:", err);
-  }
-});
-
-// --- Track when bot is added to a group/channel ---
-bot.on('my_chat_member', (update) => {
-  try {
-    const chat = update.my_chat_member?.chat;
-    const status = update.my_chat_member?.new_chat_member?.status;
-    if (!chat) return;
-    if (status === 'member' || status === 'administrator') {
-      console.log(`Bot added to ${chat.title || chat.username}`);
-      activeChats.add(chat.id);
-      sendRandomContent(chat.id);
-    }
-  } catch (err) {
-    console.error("Chat member event error:", err);
-  }
-});
-
-// --- Manual commands ---
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "🤖 Ultra Premium Bot Active! Posts premium images + jokes every 1 minute with voting.");
-});
-
-bot.onText(/\/random/, (msg) => {
-  sendRandomContent(msg.chat.id);
-});
-
-// --- Auto-post every 1 minute ---
-setInterval(() => {
-  activeChats.forEach(chatId => sendRandomContent(chatId));
-}, 60 * 1000);
-
-console.log("🤖 Ultra Premium Telegram Bot running...");
