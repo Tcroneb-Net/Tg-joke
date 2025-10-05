@@ -1,56 +1,47 @@
 import fetch from 'node-fetch';
 
+// ✅ Main handler for auto-posting Telegram messages
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || '@tbadibwoytech';
+  const chatId = req.query.chat_id || '@worldoftech4';
   if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
 
   try {
-    // Time-based greeting
-    const hour = new Date().getHours();
-    let greeting = 'Hello';
-    if (hour < 12) greeting = 'Good morning';
-    else if (hour < 18) greeting = 'Good afternoon';
-    else greeting = 'Good evening';
+    // --- Categories for random content ---
+    const categories = [
+      'Anime 4K',
+      'Action Actors',
+      'Cute Girl',
+      'Fantasy Art',
+      'Digital Art',
+      'Kawaii',
+      'Manga Art'
+    ];
 
-    // Fetch anime image
-    const imgRes = await fetch('https://nekos.best/api/v2/neko');
-    const imgData = await imgRes.json();
-    const imageUrl = imgData.results?.[0]?.url || '';
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
-    // Fetch two jokes
-    const fetchJoke = async () => {
-      try {
-        const res = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
-        if (!res.ok) return "Couldn't fetch joke!";
-        const data = await res.json();
-        if (!data || !data[0]) return "Here's a funny joke!";
-        return `${data[0].setup} - ${data[0].punchline}`;
-      } catch {
-        return "Here's a funny joke!";
-      }
-    };
+    // --- Fetch random image from Pinterest API ---
+    const imgRes = await fetch(`https://ab-pinetrest.abrahamdw882.workers.dev/?query=${encodeURIComponent(randomCategory)}`);
+    const data = await imgRes.json();
+    const pins = data.data || [];
+    if (!pins.length) throw new Error('No images found');
+    const randomPin = pins[Math.floor(Math.random() * pins.length)];
+    const imageUrl = randomPin.image;
 
-    const [joke1, joke2] = await Promise.all([fetchJoke(), fetchJoke()]);
+    // --- Fetch a quick joke ---
+    const jokeRes = await fetch('https://official-joke-api.appspot.com/jokes/programming/random');
+    const jokeData = await jokeRes.json();
+    const joke = jokeData?.[0] ? `${jokeData[0].setup} - ${jokeData[0].punchline}` : "Here's a joke for you!";
 
-    // Caption with Markdown
+    // --- Caption ---
     const caption = `
-${greeting}! 👋
+🎯 Category: *${randomCategory}*
 
-🎉 Check out my website monitor bot: [WebMonitor Pro](https://monitor-plus.vercel.app)
+💡 Joke: "${joke}"
 
-💡 Just testing the bot, it can do a lot automatically:
-- Send jokes & anime pics
-- Track websites & bots
-- Display stats and updates
-- Create polls for interaction
-
-Here's a joke for you: 
-"${joke1}"
-
-_Created by_ \`TCRONEB HACKX & Team World of Technology\`
+_Vote below if you like this!_
 `;
 
-    // Send photo
+    // --- Send image silently (disable notifications) ---
     const sendPhotoRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,51 +49,47 @@ _Created by_ \`TCRONEB HACKX & Team World of Technology\`
         chat_id: chatId,
         photo: imageUrl,
         caption: caption,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        disable_notification: true // quiet delivery
       })
     });
     const photoData = await sendPhotoRes.json();
     if (!photoData.ok) throw new Error('Failed to send photo');
 
-    // Reply with second joke
-    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: joke2,
-        reply_to_message_id: photoData.result.message_id
-      })
-    });
-
-    // Create poll for joke feedback
+    // --- Poll for voting ---
     await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPoll`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        question: "How's my joke?",
-        options: JSON.stringify(["😂 Hilarious", "😐 Meh", "🙁 Not funny"]),
+        question: "Do you like this image?",
+        options: JSON.stringify(["😍 Love it", "😐 It's okay", "🙁 Not for me"]),
         is_anonymous: false,
         type: "regular",
-        reply_to_message_id: photoData.result.message_id
+        allows_multiple_answers: false,
+        reply_to_message_id: photoData.result.message_id,
+        disable_notification: true
       })
     });
 
-    // Optional: Add inline button to Telegram channel
+    // --- Optional: inline buttons for engagement ---
     await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: "🌐 Join our Telegram channel for updates and tips!",
+        text: "🌐 Join our Telegram channel for more updates!",
         reply_markup: {
-          inline_keyboard: [[{ text: "🚀 Join Channel", url: "https://t.me/worldoftech4" }]]
-        }
+          inline_keyboard: [
+            [{ text: "🚀 Join Channel", url: "https://t.me/worldoftech4" }],
+            [{ text: "💻 Visit Website", url: "https://monitor-plus.vercel.app" }]
+          ]
+        },
+        disable_notification: true
       })
     });
 
-    res.status(200).json({ ok: true, image: imageUrl, jokes: [joke1, joke2] });
+    res.status(200).json({ ok: true, category: randomCategory, image: imageUrl, joke });
 
   } catch (err) {
     console.error(err);
