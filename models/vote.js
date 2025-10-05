@@ -10,3 +10,4 @@ const voteSchema = new mongoose.Schema({
 });
 
 export const Vote = mongoose.models.Vote || mongoose.model('Vote', voteSchema);
+ 
