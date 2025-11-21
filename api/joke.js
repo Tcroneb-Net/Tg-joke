@@ -8,7 +8,7 @@ const API_FORMATS = "https://ab-ytdlprov2.abrahamdw882.workers.dev/?url=";
 const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || "@webmonitorpro";
+  const chatId = req.query.chat_id || "@worldoftech4";
   if (!chatId) return res.status(400).json({ error: "chat_id is required" });
 
   try {
