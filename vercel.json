@@ -6,6 +6,7 @@
   "routes": [
     { "src": "/joke", "dest": "/api/joke" },
     { "src": "/anime", "dest": "/api/anime" },
-    { "src": "/clone", "dest": "/api/clone" }
+    { "src": "/clone", "dest": "/api/clone" },
+    { "src": "/tv", "dest": "/api/tv" }
   ]
 }
