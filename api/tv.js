@@ -13,42 +13,38 @@ export default async function handler(req, res) {
           chat_id: chatId,
           photo: "https://i.ibb.co/rR7XSNhj/Polish-20251222-212825353.jpg",
           caption: `
-🇿🇼 *Zimbabwe Update — New File Added!*
+Zimbabwe Update — New File Added 🇿🇼
 
-✅ *1-Tap LinkLayer file successfully uploaded*
-You can now download and use it instantly 🚀
+1-Tap LinkLayer file has been added successfully.
+Go download now.
 
-👇 *Download Now*
-Use the button below for fast access.
+Download link:
+https://worldoftech.qzz.io/home#downloads
+or
+https://worldoftech.nett.to/home#downloads
 
-📈 *Goal:*  
-Let’s reach *300 users* — more files will be added automatically 🔥  
-👉 Comment *“Done”* after downloading.
+Goal:
+Let’s reach 300 users to add more files.
+Comment "Done" after downloading.
 
----
+Bot Notice:
+This message is posted by the official thx ai v2 automation bot.
 
-🤖 *Bot Notice*  
-This update is posted by the official automation bot.
+Tcroneb Hackx:
+He is temporarily not available on Telegram.
+Please contact him on WhatsApp for now.
+Fixes are in progress and he will be back soon.
 
-👤 *About Tcroneb Hackx*  
-Tcroneb Hackx is *temporarily unavailable on Telegram*.  
-📞 Contact him on *WhatsApp* for now — fixes are in progress and he’ll be back soon.
+THX AI Coder — Version 2 Loaded
 
----
-
-⚙️ *THX AI Coder — V2 Loaded*
-API & Website tools are now live.
-
-📘 *Official Documentation*  
+Documentation:
 https://thx-coder.vercel.app
 
-📱 *Temporary Demo App*  
-Built using *DrpidScript*  
+Temporary Demo App (DrpidScript):
 https://www.mediafire.com/file/0k77i37fkn4vlpj/THX_AI.apk/file
 
-🔥 More updates coming very soon…
+More updates coming soon.
           `,
-          parse_mode: "Markdown",
           reply_markup: {
             inline_keyboard: [
               [
