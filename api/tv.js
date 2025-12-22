@@ -1,69 +1,72 @@
-import fetch from 'node-fetch';
+import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  const chatId = req.query.chat_id || '@worldoftech4';
-
-  if (!chatId) return res.status(400).json({ error: 'chat_id is required' });
+  const chatId = req.query.chat_id || "@worldoftech4";
 
   try {
-    // --- Your custom update content ---
-    const UPDATE_TITLE = "🔥 ProStream Live Stream TV — New Update!";
-    const UPDATE_DESCRIPTION = `
-Watch unlimited Live TV, Sports, Movies & Worldwide IPTV Streams 
-with zero buffering and ultra HD quality! 🌍📺
+    const sendPhoto = await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          photo: "https://i.ibb.co/rR7XSNhj/Polish-20251222-212825353.jpg",
+          caption: `
+🇿🇼 *Zimbabwe Update — New File Added!*
 
-✔ Live Sports
-✔ Movies & Series
-✔ Worldwide Channels
-✔ Smooth & Fast Streaming
+✅ *1-Tap LinkLayer file successfully uploaded*
+You can now download and use it instantly 🚀
 
-Visit now and enjoy premium streaming for FREE!
-    `;
+👇 *Download Now*
+Use the button below for fast access.
 
-    // --- Your promotional image ---
-    const IMAGE_URL = "https://i.ibb.co/ymtqT16c/temp.jpg";
+📈 *Goal:*  
+Let’s reach *300 users* — more files will be added automatically 🔥  
+👉 Comment *“Done”* after downloading.
 
-    // --- WhatsApp links ---
-    const WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb6flDp4yltRj3W6NU0z";
-    const WHATSAPP_DM = "https://wa.me/message/CJ3LQTT5L4SLK1";
+---
 
-    // --- Live TV stream link ---
-    const STREAM_LINK = "https://worldoftech.qzz.io/tv?channel=4Kurd.fr%40SD";
+🤖 *Bot Notice*  
+This update is posted by the official automation bot.
 
-    // --- Build caption ---
-    const caption = `
-⭐ *${UPDATE_TITLE}*
+👤 *About Tcroneb Hackx*  
+Tcroneb Hackx is *temporarily unavailable on Telegram*.  
+📞 Contact him on *WhatsApp* for now — fixes are in progress and he’ll be back soon.
 
-${UPDATE_DESCRIPTION}
+---
 
-👇 Connect with us for support, updates & more
-    `;
+⚙️ *THX AI Coder — V2 Loaded*
+API & Website tools are now live.
 
-    // --- Send the update with image ---
-    const sendPhotoRes = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        photo: IMAGE_URL,
-        caption: caption,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "📺 I'm Watching This Channel Now", url: STREAM_LINK }],
-            [{ text: "💬 Join Our WhatsApp Channel", url: WHATSAPP_CHANNEL }],
-            [{ text: "📞 Message Us on WhatsApp", url: WHATSAPP_DM }],
-            [{ text: "🌐 Visit Our Website", url: "https://worldoftech.qzz.io" }]
-          ]
-        }
-      })
-    });
+📘 *Official Documentation*  
+https://thx-coder.vercel.app
 
-    const result = await sendPhotoRes.json();
-    if (!result.ok) throw new Error("Failed to send update");
+📱 *Temporary Demo App*  
+Built using *DrpidScript*  
+https://www.mediafire.com/file/0k77i37fkn4vlpj/THX_AI.apk/file
+
+🔥 More updates coming very soon…
+          `,
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "⬇️ 1-Tap Download",
+                  url: "https://worldoftech.qzz.io/home#downloads"
+                }
+              ]
+            ]
+          }
+        })
+      }
+    );
+
+    const data = await sendPhoto.json();
+    if (!data.ok) throw new Error(data.description);
 
     res.status(200).json({ ok: true, sent: true });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
