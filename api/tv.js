@@ -4,46 +4,42 @@ export default async function handler(req, res) {
   const chatId = req.query.chat_id || "@worldoftech4";
 
   try {
-    const sendPhoto = await fetch(
+    const response = await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          photo: "https://i.ibb.co/rR7XSNhj/Polish-20251222-212825353.jpg",
+          photo: "https://i.ibb.co/w9qjpVT/Polish-20251226-210436486.jpg",
           caption: `
-Zimbabwe Update — New File Added 🇿🇼
+LinkLayer File Updated ✅
 
-1-Tap LinkLayer file has been added successfully.
-Go download now.
+What’s New 🔥🔥
+• NPV file added
+• 1-Tap download available now
+Go download and enjoy fast access.
 
-Download link:
+Download:
 https://worldoftech.qzz.io/home#downloads
-or
-https://worldoftech.nett.to/home#downloads
 
-Goal:
-Let’s reach 300 users to add more files.
-Comment "Done" after downloading.
+Live Stream TV:
+https://worldoftech.nett.to/tv
 
-Bot Notice:
-This message is posted by the official thx ai v2 automation bot.
+CapCut Premium Free APK:
+https://worldoftech.nett.to/capcut
 
-Tcroneb Hackx:
-He is temporarily not available on Telegram.
-Please contact him on WhatsApp for now.
-Fixes are in progress and he will be back soon.
+Main Website:
+https://worldoftech.nett.to
 
-THX AI Coder — Version 2 Loaded
+Network & Cyber Tools:
+https://worldoftech.qzz.io/home#cyber
 
-Documentation:
-https://thx-coder.vercel.app
+By Cyber Coder
+More tools coming soon.
 
-Temporary Demo App (DrpidScript):
-https://www.mediafire.com/file/0k77i37fkn4vlpj/THX_AI.apk/file
-
-More updates coming soon.
+Vincent Ganiza (Lil Gaga Traxx09)
+https://codeverse.nett.to
           `,
           reply_markup: {
             inline_keyboard: [
@@ -59,10 +55,10 @@ More updates coming soon.
       }
     );
 
-    const data = await sendPhoto.json();
+    const data = await response.json();
     if (!data.ok) throw new Error(data.description);
 
-    res.status(200).json({ ok: true, sent: true });
+    res.status(200).json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
