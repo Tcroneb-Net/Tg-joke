@@ -1,40 +1,38 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET" && req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const chatId = req.query.chat_id || "@worldoftech4";
   const BOT_TOKEN = process.env.BOT_TOKEN;
-
   if (!BOT_TOKEN) {
     return res.status(500).json({ error: "BOT_TOKEN not set" });
   }
 
-  const message = `
+  const chatId = req.query.chat_id || "@worldoftech4";
 
-🫵👋iro config *63bbe201-78b4-4edd-9754-e3c1bd9ba5b3* 🫵👋
-
+  const caption = `
 🚨 *Important Notice – NPV Tunnel* 🚨
+st
+👉 Use *NPV Tunnel* first  
+📌 Copy & Import the cloud key below
 
-Please use *NPV Tunnel* first.  
-📌 *Copy & Import* the config correctly for best performance.
+🔑 *NPV Cloud Config (Fast host)* 👇
+\`\`\`
+npv://PRIMARY-CLOUD-KEY-HERE-123456789
+\`\`\`
 
-ℹ️ For more information & updates, join our official WhatsApp Channel:
+
+ℹ️ Join WhatsApp Channel for updates:
 https://whatsapp.com/channel/0029Vb6flDp4yltRj3W6NU0z
 
 ⚠️ *Notice:*  
-Tcroneb Hackx is currently *not available on Telegram*.
+Tcroneb Hackx is not available on Telegram right now.
 
 🤖 *Message sent by:*  
 *Thx AI – Model v3*
 
-🧩 *Developer APIs:*  
+🧩 Developer APIs:
 https://thxcoder.zone.id
 
-⚡ *Looking for fast V2Ray servers?*  
-Create yours *FREE* here:  
+⚡ Free V2Ray Servers:
 https://worldoftech.qzz.io/v2ray
 
 —  
@@ -43,43 +41,22 @@ https://worldoftech.qzz.io/v2ray
 
   try {
     const response = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: message,
+          photo: "https://i.ibb.co/cGCqxpy/Screenshot-2026-01-15-07-53-14-044-com-napsternetlabs-napsternetv.jpg",
+          caption,
           parse_mode: "Markdown",
-          disable_web_page_preview: false,
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "📢 WhatsApp Channel",
-                  url: "https://whatsapp.com/channel/0029Vb6flDp4yltRj3W6NU0z"
-                }
-              ],
-              [
-                {
-                  text: "⚡ Free V2Ray Server",
-                  url: "https://worldoftech.qzz.io/v2ray"
-                }
-              ],
-              [
-                {
-                  text: "🧩 Developer APIs",
-                  url: "https://thxcoder.zone.id"
-                }
-              ]
-            ]
-          }
+          disable_web_page_preview: true
         })
       }
     );
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.description || "Telegram API error");
+    if (!data.ok) throw new Error(data.description);
 
     res.status(200).json({ ok: true });
   } catch (err) {
