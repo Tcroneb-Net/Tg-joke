@@ -16,7 +16,7 @@ st
 
 🔑 *NPV Cloud Config (Fast host)* 👇
 \`\`\`
-npv://PRIMARY-CLOUD-KEY-HERE-123456789
+aacbaa58-5ab0-4caf-bc46-aaf16c43b383
 \`\`\`
 
 
