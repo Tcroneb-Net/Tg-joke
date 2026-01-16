@@ -1,52 +1,72 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
+  if (req.method !== "GET" && req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   const chatId = req.query.chat_id || "@worldoftech4";
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+
+  if (!BOT_TOKEN) {
+    return res.status(500).json({ error: "BOT_TOKEN not set" });
+  }
+
+  const message = `
+🚨 *Important Notice – NPV Tunnel* 🚨
+
+Please use *NPV Tunnel* first.  
+📌 *Copy & Import* the config correctly for best performance.
+
+ℹ️ For more information & updates, join our official WhatsApp Channel:
+https://whatsapp.com/channel/0029Vb6flDp4yltRj3W6NU0z
+
+⚠️ *Notice:*  
+Tcroneb Hackx is currently *not available on Telegram*.
+
+🤖 *Message sent by:*  
+*Thx AI – Model v3*
+
+🧩 *Developer APIs:*  
+https://thxcoder.zone.id
+
+⚡ *Looking for fast V2Ray servers?*  
+Create yours *FREE* here:  
+https://worldoftech.qzz.io/v2ray
+
+—  
+💠 *Thx AI*
+`;
 
   try {
     const response = await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          photo: "https://i.ibb.co/w9qjpVT/Polish-20251226-210436486.jpg",
-          caption: `
-LinkLayer File Updated ✅
-
-What’s New 🔥🔥
-• NPV file added
-• 1-Tap download available now
-Go download and enjoy fast access.
-
-Download:
-https://worldoftech.qzz.io/home#downloads
-
-Live Stream TV:
-https://worldoftech.nett.to/tv
-
-CapCut Premium Free APK:
-https://worldoftech.nett.to/capcut
-
-Main Website:
-https://worldoftech.nett.to
-
-Network & Cyber Tools:
-https://worldoftech.qzz.io/home#cyber
-
-By Cyber Coder
-More tools coming soon.
-
-Vincent Ganiza (Lil Gaga Traxx09)
-https://codeverse.nett.to
-          `,
+          text: message,
+          parse_mode: "Markdown",
+          disable_web_page_preview: false,
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: "⬇️ 1-Tap Download",
-                  url: "https://worldoftech.qzz.io/home#downloads"
+                  text: "📢 WhatsApp Channel",
+                  url: "https://whatsapp.com/channel/0029Vb6flDp4yltRj3W6NU0z"
+                }
+              ],
+              [
+                {
+                  text: "⚡ Free V2Ray Server",
+                  url: "https://worldoftech.qzz.io/v2ray"
+                }
+              ],
+              [
+                {
+                  text: "🧩 Developer APIs",
+                  url: "https://thxcoder.zone.id"
                 }
               ]
             ]
@@ -56,11 +76,11 @@ https://codeverse.nett.to
     );
 
     const data = await response.json();
-    if (!data.ok) throw new Error(data.description);
+    if (!data.ok) throw new Error(data.description || "Telegram API error");
 
     res.status(200).json({ ok: true });
   } catch (err) {
-    console.error(err);
+    console.error("Telegram Error:", err);
     res.status(500).json({ error: err.message });
   }
 }
